@@ -1,0 +1,120 @@
+### CoreHub API Examples
+
+# Variables
+@baseUrl = https://localhost:5001/api
+@token = your-jwt-token-here
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@demo.com",
+  "password": "Admin123!"
+}
+
+### Get Clients
+GET {{baseUrl}}/clients?page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+### Get Client by ID
+GET {{baseUrl}}/clients/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+
+### Create Client
+POST {{baseUrl}}/clients
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "dateOfBirth": "1990-01-15",
+  "gender": 1,
+  "email": "john.doe@example.com",
+  "phone": "+1234567890",
+  "programId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Update Client
+PUT {{baseUrl}}/clients/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "firstName": "John",
+  "lastName": "Doe Updated",
+  "dateOfBirth": "1990-01-15",
+  "gender": 1,
+  "email": "john.doe@example.com"
+}
+
+### Get Data Quality
+GET {{baseUrl}}/clients/00000000-0000-0000-0000-000000000000/dq
+Authorization: Bearer {{token}}
+
+### Get Measures
+GET {{baseUrl}}/measures
+Authorization: Bearer {{token}}
+
+### Create Form
+POST {{baseUrl}}/measures/forms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clientId": "00000000-0000-0000-0000-000000000000",
+  "measureId": "00000000-0000-0000-0000-000000000000",
+  "mode": 1,
+  "generateRemoteLink": true
+}
+
+### Submit Form
+POST {{baseUrl}}/measures/forms/00000000-0000-0000-0000-000000000000/submit
+Content-Type: application/json
+
+{
+  "formId": "00000000-0000-0000-0000-000000000000",
+  "answers": {
+    "00000000-0000-0000-0000-000000000001": 2,
+    "00000000-0000-0000-0000-000000000002": 3,
+    "00000000-0000-0000-0000-000000000003": 1
+  }
+}
+
+### Get KPI Report
+POST {{baseUrl}}/reports/kpi
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "startDate": "2024-01-01",
+  "endDate": "2024-12-31"
+}
+
+### Get Scatter Plot
+POST {{baseUrl}}/reports/scatter
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measureId": "00000000-0000-0000-0000-000000000000",
+  "startDate": "2024-01-01",
+  "endDate": "2024-12-31",
+  "minSessions": 2
+}
+
+### Export Report to Excel
+POST {{baseUrl}}/reports/export
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reportType": "KPI",
+  "format": "Excel",
+  "parameters": {
+    "startDate": "2024-01-01",
+    "endDate": "2024-12-31"
+  }
+}

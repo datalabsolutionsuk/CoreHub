@@ -1,0 +1,196 @@
+@inherits LayoutComponentBase
+
+<div class="public-page">
+    <nav class="public-navbar" role="navigation" aria-label="Main navigation">
+        <div class="navbar-container">
+            <a href="/" class="navbar-brand" aria-label="CoreHub home">
+                <i class="fas fa-heart-pulse" aria-hidden="true"></i>
+                <span>CoreHub</span>
+            </a>
+            <div class="navbar-menu">
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/#pricing" class="nav-link">Pricing</a>
+                <a href="/#about" class="nav-link">About</a>
+                <a href="/login" class="btn btn-outline-primary btn-sm me-2">Login</a>
+                <a href="/login" class="btn btn-primary btn-sm">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="public-content" role="main">
+        @Body
+    </main>
+
+    <footer class="public-footer" role="contentinfo">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>CoreHub</h4>
+                <p>Modern practice management software for healthcare professionals.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <a href="/#features">Features</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="/login">Login</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="/#about">About</a>
+                <a href="#">Contact</a>
+                <a href="#">Privacy</a>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
+                <a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a>
+                <a href="#"><i class="fab fa-github"></i> GitHub</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 CoreHub. All rights reserved.</p>
+        </div>
+    </footer>
+</div>
+
+<style>
+    .public-page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+    }
+
+    .public-navbar {
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        text-decoration: none;
+    }
+
+    .navbar-brand i {
+        color: #3b82f6;
+        font-size: 1.75rem;
+    }
+
+    .navbar-menu {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .navbar-menu .nav-link {
+        color: #475569;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s;
+    }
+
+    .navbar-menu .nav-link:hover {
+        color: #1e293b;
+    }
+
+    .navbar-menu .nav-link:focus {
+        outline: 2px solid #5b6edb;
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    .public-content {
+        flex: 1;
+    }
+
+    .public-footer {
+        background: #1e293b;
+        color: white;
+        padding: 3rem 0 0;
+        margin-top: 4rem;
+    }
+
+    .footer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem 3rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+    }
+
+    .footer-section h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: white;
+    }
+
+    .footer-section p {
+        color: #cbd5e1;
+        font-size: 0.875rem;
+        line-height: 1.6;
+    }
+
+    .footer-section a {
+        display: block;
+        color: #cbd5e1;
+        text-decoration: none;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        transition: color 0.2s;
+    }
+
+    .footer-section a:hover {
+        color: white;
+    }
+
+    .footer-section a:focus {
+        outline: 2px solid #5b6edb;
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    .footer-bottom {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1.5rem 2rem;
+        text-align: center;
+    }
+
+    .footer-bottom p {
+        color: #cbd5e1;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    @@media (max-width: 768px) {
+        .navbar-container {
+            padding: 1rem;
+        }
+
+        .navbar-menu {
+            gap: 1rem;
+        }
+
+        .navbar-menu .nav-link {
+            display: none;
+        }
+    }
+</style>

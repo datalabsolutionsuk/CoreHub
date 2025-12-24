@@ -1,0 +1,1040 @@
+@page "/dashboard"
+@using Microsoft.AspNetCore.Components.Web
+@rendermode @(new InteractiveServerRenderMode())
+
+<PageTitle>Dashboard - CoreHub</PageTitle>
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Welcome back! 👋</h1>
+            <p class="dashboard-subtitle">Here's what's happening with your practice today</p>
+        </div>
+        <div class="dashboard-actions">
+            <button class="btn btn-outline-primary btn-sm me-2" @onclick="ExportData">
+                <i class="fas fa-download me-1"></i> Export
+            </button>
+            <button class="btn btn-primary btn-sm" @onclick="CreateNewClient">
+                <i class="fas fa-plus me-1"></i> New Client
+            </button>
+        </div>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="metric-card metric-card-blue @(selectedFilter == "clients" ? "metric-active" : "")" @onclick="() => FilterByClients()">
+            <div class="metric-card-content">
+                <div class="metric-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="metric-details">
+                    <h3 class="metric-label">Active Clients</h3>
+                    <div class="metric-value-row">
+                        <span class="metric-value">@activeClients</span>
+                        <span class="metric-trend metric-trend-up">
+                            <i class="fas fa-arrow-up"></i> 12%
+                        </span>
+                    </div>
+                    <p class="metric-description">+5 this week</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card metric-card-red @(selectedFilter == "flags" ? "metric-active" : "")" @onclick="() => FilterByFlags()">
+            <div class="metric-card-content">
+                <div class="metric-icon">
+                    <i class="fas fa-flag"></i>
+                </div>
+                <div class="metric-details">
+                    <h3 class="metric-label">Open Flags</h3>
+                    <div class="metric-value-row">
+                        <span class="metric-value">@openFlags</span>
+                        <span class="metric-trend metric-trend-down">
+                            <i class="fas fa-arrow-down"></i> 3%
+                        </span>
+                    </div>
+                    <p class="metric-description">Requires attention</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card metric-card-green @(selectedFilter == "today" ? "metric-active" : "")" @onclick="() => FilterByToday()">
+            <div class="metric-card-content">
+                <div class="metric-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="metric-details">
+                    <h3 class="metric-label">Today's Appointments</h3>
+                    <div class="metric-value-row">
+                        <span class="metric-value">@todayAppointments</span>
+                        <span class="metric-badge">@completedToday completed</span>
+                    </div>
+                    <p class="metric-description">Next at 2:00 PM</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card metric-card-purple @(selectedFilter == "all" ? "metric-active" : "")" @onclick="() => FilterByAll()">
+            <div class="metric-card-content">
+                <div class="metric-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="metric-details">
+                    <h3 class="metric-label">This Month Sessions</h3>
+                    <div class="metric-value-row">
+                        <span class="metric-value">@monthSessions</span>
+                        <span class="metric-trend metric-trend-up">
+                            <i class="fas fa-arrow-up"></i> 8%
+                        </span>
+                    </div>
+                    <p class="metric-description">Target: 180 sessions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        @if (selectedFilter == "clients")
+        {
+            <div class="dashboard-card dashboard-card-wide">
+                <div class="card-header-custom">
+                    <div>
+                        <h5 class="card-title-custom">Active Clients</h5>
+                        <p class="card-subtitle-custom">Total of @activeClients clients</p>
+                    </div>
+                    <a href="/clients" class="view-all-link">View all <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="card-body-custom">
+                    <div class="client-grid">
+                        @foreach (var client in GetPagedClients())
+                        {
+                            <div class="client-card-mini">
+                                <div class="client-avatar">@client.Initials</div>
+                                <div class="client-info">
+                                    <div class="client-name">@client.Name</div>
+                                    <div class="client-meta">@client.NextSession</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if (allClients.Count > ClientsPerPage)
+                    {
+                        <div class="pagination-container">
+                            <button class="pagination-btn" @onclick="PreviousClientsPage" disabled="@(clientsCurrentPage == 1)">
+                                <i class="fas fa-chevron-left"></i>
+                                <span>Previous</span>
+                            </button>
+                            <div class="pagination-info">
+                                <span>Page @clientsCurrentPage of @((int)Math.Ceiling((double)allClients.Count / ClientsPerPage))</span>
+                            </div>
+                            <button class="pagination-btn" @onclick="NextClientsPage" disabled="@(clientsCurrentPage * ClientsPerPage >= allClients.Count)">
+                                <span>Next</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="dashboard-card">
+                <div class="card-header-custom">
+                    <div>
+                        <h5 class="card-title-custom">Recent Flags</h5>
+                        <p class="card-subtitle-custom">High priority client concerns</p>
+                    </div>
+                    <a href="/flags" class="view-all-link">View all <i class="fas fa-arrow-right"></i></a>
+                </div>
+            <div class="card-body-custom">
+                @if (filteredFlags.Any())
+                {
+                    <div class="list-container">
+                        @foreach (var flag in GetPagedFlags())
+                        {
+                            <div class="list-item">
+                                <div class="list-item-icon @flag.PriorityClass">
+                                    <i class="fas fa-flag"></i>
+                                </div>
+                                <div class="list-item-content">
+                                    <div class="list-item-title">@flag.ClientName</div>
+                                    <div class="list-item-subtitle">@flag.Description</div>
+                                </div>
+                                <div class="list-item-meta">
+                                    <span class="badge @flag.PriorityBadge">@flag.Priority</span>
+                                    <small class="text-muted">@flag.CreatedDate</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if (GetFlagsTotalPages() > 1)
+                    {
+                        <div class="pagination-container">
+                            <button class="pagination-btn" @onclick="PreviousFlagsPage" disabled="@(flagsCurrentPage == 1)">
+                                <i class="fas fa-chevron-left"></i>
+                                <span>Previous</span>
+                            </button>
+                            <div class="pagination-info">
+                                <span>Page @flagsCurrentPage of @GetFlagsTotalPages()</span>
+                            </div>
+                            <button class="pagination-btn" @onclick="NextFlagsPage" disabled="@(flagsCurrentPage >= GetFlagsTotalPages())">
+                                <span>Next</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-flag"></i>
+                        </div>
+                        <h6 class="empty-state-title">No flags match filter</h6>
+                        <p class="empty-state-text">Try adjusting your filter</p>
+                    </div>
+                }
+            </div>
+        </div>
+        }
+
+        @if (selectedFilter != "clients")
+        {
+        <div class="dashboard-card">
+            <div class="card-header-custom">
+                <div>
+                    <h5 class="card-title-custom">Upcoming Appointments</h5>
+                    <p class="card-subtitle-custom">Next 7 days schedule</p>
+                </div>
+                <a href="/appointments" class="view-all-link">View all <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="card-body-custom">
+                @if (filteredAppointments.Any())
+                {
+                    <div class="list-container">
+                        @foreach (var appt in GetPagedAppointments())
+                        {
+                            <div class="list-item">
+                                <div class="list-item-icon icon-green">
+                                    <i class="fas fa-@appt.Icon"></i>
+                                </div>
+                                <div class="list-item-content">
+                                    <div class="list-item-title">@appt.ClientName</div>
+                                    <div class="list-item-subtitle">@appt.Type</div>
+                                </div>
+                                <div class="list-item-meta">
+                                    <div class="appointment-time">
+                                        <i class="fas fa-clock"></i> @appt.Time
+                                    </div>
+                                    <small class="text-muted">@appt.Date</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if (GetAppointmentsTotalPages() > 1)
+                    {
+                        <div class="pagination-container">
+                            <button class="pagination-btn" @onclick="PreviousAppointmentsPage" disabled="@(appointmentsCurrentPage == 1)">
+                                <i class="fas fa-chevron-left"></i>
+                                <span>Previous</span>
+                            </button>
+                            <div class="pagination-info">
+                                <span>Page @appointmentsCurrentPage of @GetAppointmentsTotalPages()</span>
+                            </div>
+                            <button class="pagination-btn" @onclick="NextAppointmentsPage" disabled="@(appointmentsCurrentPage >= GetAppointmentsTotalPages())">
+                                <span>Next</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h6 class="empty-state-title">No appointments match filter</h6>
+                        <p class="empty-state-text">Try adjusting your filter</p>
+                    </div>
+                }
+            </div>
+        </div>
+        }
+    </div>
+</div>
+
+<style>
+    .dashboard-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .dashboard-subtitle {
+        font-size: 1rem;
+        color: #475569;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .dashboard-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .metric-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .metric-card.metric-active {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+        transform: translateY(-3px);
+    }
+
+    .metric-card.metric-active::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 12px;
+        border: 2px solid currentColor;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    .metric-card-blue { border-left-color: #3b82f6; }
+    .metric-card-red { border-left-color: #ef4444; }
+    .metric-card-green { border-left-color: #10b981; }
+    .metric-card-purple { border-left-color: #8b5cf6; }
+
+    .metric-card-content {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .metric-card-blue .metric-icon {
+        background: #dbeafe;
+        color: #3b82f6;
+    }
+
+    .metric-card-red .metric-icon {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .metric-card-green .metric-icon {
+        background: #d1fae5;
+        color: #10b981;
+    }
+
+    .metric-card-purple .metric-icon {
+        background: #ede9fe;
+        color: #8b5cf6;
+    }
+
+    .metric-details {
+        flex: 1;
+    }
+
+    .metric-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-value-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1;
+    }
+
+    .metric-trend {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+    }
+
+    .metric-trend-up {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .metric-trend-down {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .metric-badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .metric-description {
+        font-size: 0.813rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header-custom {
+        padding: 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .card-title-custom {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .card-subtitle-custom {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0.25rem 0 0 0;
+    }
+
+    .view-all-link {
+        font-size: 0.875rem;
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .view-all-link:hover {
+        color: #2563eb;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        min-height: 400px;
+    }
+
+    .list-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #94a3b8;
+    }
+
+    .empty-state-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state-text {
+        font-size: 0.875rem;
+        color: #475569;
+        margin-bottom: 0;
+    }
+
+    .dashboard-card-wide {
+        grid-column: 1 / -1;
+    }
+
+    .list-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.875rem;
+        border-radius: 8px;
+        background: #f8fafc;
+        transition: all 0.2s;
+    }
+
+    .list-item:hover {
+        background: #f1f5f9;
+        transform: translateX(4px);
+    }
+
+    .list-item-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.125rem;
+        flex-shrink: 0;
+    }
+
+    .icon-red {
+        background: #fef2f2;
+        color: #ef4444;
+    }
+
+    .icon-yellow {
+        background: #fefce8;
+        color: #eab308;
+    }
+
+    .icon-green {
+        background: #f0fdf4;
+        color: #10b981;
+    }
+
+    .list-item-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .list-item-title {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.875rem;
+        margin-bottom: 0.125rem;
+    }
+
+    .list-item-subtitle {
+        font-size: 0.8125rem;
+        color: #64748b;
+    }
+
+    .list-item-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+    }
+
+    .badge {
+        padding: 0.25rem 0.625rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .badge-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .badge-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .text-muted {
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+
+    .appointment-time {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.8125rem;
+        color: #475569;
+        font-weight: 500;
+    }
+
+    .appointment-time i {
+        color: #10b981;
+    }
+
+    .dashboard-card-wide {
+        grid-column: 1 / -1;
+    }
+
+    .list-item {
+
+    .client-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .client-card-mini {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .client-card-mini:hover {
+        background: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .client-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+
+    .client-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .client-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .client-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .pagination-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .pagination-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e2e8f0;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #475569;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+    }
+
+    .pagination-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .pagination-info {
+        font-size: 0.875rem;
+        color: #64748b;
+        font-weight: 500;
+        padding: 0 1rem;
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+
+        .dashboard-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .dashboard-title {
+            font-size: 1.5rem;
+        }
+
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@code {
+    private int activeClients = 0;
+    private int openFlags = 0;
+    private int todayAppointments = 0;
+    private int completedToday = 0;
+    private int monthSessions = 0;
+    private string selectedFilter = "all";
+    
+    private int flagsCurrentPage = 1;
+    private int appointmentsCurrentPage = 1;
+    private int clientsCurrentPage = 1;
+    private const int ItemsPerPage = 5;
+    private const int ClientsPerPage = 12;
+
+    private List<Flag> allFlags = new();
+    private List<Appointment> allAppointments = new();
+    private List<Client> allClients = new();
+    private List<Flag> filteredFlags => FilterFlags();
+    private List<Appointment> filteredAppointments => FilterAppointments();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private void ExportData()
+    {
+        // TODO: Implement export functionality
+        Console.WriteLine("Export data clicked");
+    }
+
+    private void CreateNewClient()
+    {
+        // TODO: Navigate to create client page or show modal
+        Console.WriteLine("Create new client clicked");
+    }
+
+    private async Task LoadDashboardData()
+    {
+        // Dummy metrics
+        activeClients = 42;
+        openFlags = 7;
+        todayAppointments = 8;
+        completedToday = 3;
+        monthSessions = 156;
+
+        // Dummy flags
+        allFlags = new List<Flag>
+        {
+            new Flag { ClientName = "Sarah Johnson", Description = "Missed last 2 appointments", Priority = "High", PriorityClass = "icon-red", PriorityBadge = "badge-danger", CreatedDate = "2 days ago" },
+            new Flag { ClientName = "Michael Chen", Description = "Payment overdue", Priority = "High", PriorityClass = "icon-red", PriorityBadge = "badge-danger", CreatedDate = "3 days ago" },
+            new Flag { ClientName = "Emma Davis", Description = "Requires follow-up call", Priority = "Medium", PriorityClass = "icon-yellow", PriorityBadge = "badge-warning", CreatedDate = "1 week ago" },
+            new Flag { ClientName = "James Wilson", Description = "Insurance renewal needed", Priority = "Medium", PriorityClass = "icon-yellow", PriorityBadge = "badge-warning", CreatedDate = "1 week ago" },
+            new Flag { ClientName = "Olivia Brown", Description = "Session notes incomplete", Priority = "Low", PriorityClass = "icon-yellow", PriorityBadge = "badge-warning", CreatedDate = "2 weeks ago" },
+            new Flag { ClientName = "William Garcia", Description = "Treatment plan update needed", Priority = "Medium", PriorityClass = "icon-yellow", PriorityBadge = "badge-warning", CreatedDate = "3 days ago" },
+            new Flag { ClientName = "Sophia Martinez", Description = "Referral pending", Priority = "Low", PriorityClass = "icon-yellow", PriorityBadge = "badge-warning", CreatedDate = "1 week ago" }
+        };
+
+        // Dummy clients (42 total)
+        allClients = new List<Client>
+        {
+            new Client { Name = "Sarah Johnson", Initials = "SJ", NextSession = "Today 2:00 PM" },
+            new Client { Name = "Michael Chen", Initials = "MC", NextSession = "Tomorrow" },
+            new Client { Name = "Emma Davis", Initials = "ED", NextSession = "Dec 26" },
+            new Client { Name = "James Wilson", Initials = "JW", NextSession = "Dec 27" },
+            new Client { Name = "Olivia Brown", Initials = "OB", NextSession = "Next Week" },
+            new Client { Name = "William Garcia", Initials = "WG", NextSession = "Today 4:00 PM" },
+            new Client { Name = "Sophia Martinez", Initials = "SM", NextSession = "Tomorrow" },
+            new Client { Name = "Alex Thompson", Initials = "AT", NextSession = "Today 9:00 AM" },
+            new Client { Name = "Rachel Kim", Initials = "RK", NextSession = "Dec 26" },
+            new Client { Name = "David Lee", Initials = "DL", NextSession = "Dec 28" },
+            new Client { Name = "Jessica Taylor", Initials = "JT", NextSession = "Next Week" },
+            new Client { Name = "Robert Anderson", Initials = "RA", NextSession = "Today 3:30 PM" },
+            new Client { Name = "Maria Rodriguez", Initials = "MR", NextSession = "Tomorrow" },
+            new Client { Name = "Kevin White", Initials = "KW", NextSession = "Dec 27" },
+            new Client { Name = "Amanda Harris", Initials = "AH", NextSession = "Dec 29" },
+            new Client { Name = "Christopher Clark", Initials = "CC", NextSession = "Next Week" },
+            new Client { Name = "Lisa Robinson", Initials = "LR", NextSession = "Today 11:00 AM" },
+            new Client { Name = "Daniel Lewis", Initials = "DL", NextSession = "Tomorrow" },
+            new Client { Name = "Emily Walker", Initials = "EW", NextSession = "Dec 26" },
+            new Client { Name = "Matthew Hall", Initials = "MH", NextSession = "Dec 30" },
+            new Client { Name = "Ashley Allen", Initials = "AA", NextSession = "Next Week" },
+            new Client { Name = "Joshua Young", Initials = "JY", NextSession = "Tomorrow" },
+            new Client { Name = "Samantha King", Initials = "SK", NextSession = "Dec 27" },
+            new Client { Name = "Andrew Scott", Initials = "AS", NextSession = "Today 1:00 PM" },
+            new Client { Name = "Elizabeth Green", Initials = "EG", NextSession = "Dec 28" },
+            new Client { Name = "Ryan Adams", Initials = "RA", NextSession = "Next Week" },
+            new Client { Name = "Lauren Baker", Initials = "LB", NextSession = "Tomorrow" },
+            new Client { Name = "Brandon Nelson", Initials = "BN", NextSession = "Dec 26" },
+            new Client { Name = "Megan Carter", Initials = "MC", NextSession = "Dec 29" },
+            new Client { Name = "Justin Mitchell", Initials = "JM", NextSession = "Next Week" },
+            new Client { Name = "Nicole Perez", Initials = "NP", NextSession = "Today 10:00 AM" },
+            new Client { Name = "Tyler Roberts", Initials = "TR", NextSession = "Tomorrow" },
+            new Client { Name = "Brittany Turner", Initials = "BT", NextSession = "Dec 27" },
+            new Client { Name = "Eric Phillips", Initials = "EP", NextSession = "Dec 30" },
+            new Client { Name = "Melissa Campbell", Initials = "MC", NextSession = "Next Week" },
+            new Client { Name = "Jacob Parker", Initials = "JP", NextSession = "Tomorrow" },
+            new Client { Name = "Victoria Evans", Initials = "VE", NextSession = "Dec 26" },
+            new Client { Name = "Nathan Edwards", Initials = "NE", NextSession = "Today 5:00 PM" },
+            new Client { Name = "Rebecca Collins", Initials = "RC", NextSession = "Dec 28" },
+            new Client { Name = "Aaron Stewart", Initials = "AS", NextSession = "Next Week" },
+            new Client { Name = "Michelle Sanchez", Initials = "MS", NextSession = "Tomorrow" },
+            new Client { Name = "Kyle Morris", Initials = "KM", NextSession = "Dec 27" }
+        };
+
+        // Dummy appointments
+        allAppointments = new List<Appointment>
+        {
+            new Appointment { ClientName = "Alex Thompson", Type = "Initial Consultation", Time = "9:00 AM", Date = "Today", Icon = "user-plus" },
+            new Appointment { ClientName = "Rachel Kim", Type = "Follow-up Session", Time = "10:30 AM", Date = "Today", Icon = "calendar-check" },
+            new Appointment { ClientName = "David Lee", Type = "Therapy Session", Time = "2:00 PM", Date = "Today", Icon = "notes-medical" },
+            new Appointment { ClientName = "Jessica Taylor", Type = "Assessment", Time = "3:30 PM", Date = "Today", Icon = "clipboard-list" },
+            new Appointment { ClientName = "Robert Anderson", Type = "Group Session", Time = "9:00 AM", Date = "Tomorrow", Icon = "users" },
+            new Appointment { ClientName = "Maria Rodriguez", Type = "Family Therapy", Time = "11:00 AM", Date = "Tomorrow", Icon = "home" },
+            new Appointment { ClientName = "Kevin White", Type = "Therapy Session", Time = "1:00 PM", Date = "Dec 26", Icon = "notes-medical" },
+            new Appointment { ClientName = "Amanda Harris", Type = "Check-in", Time = "4:00 PM", Date = "Dec 26", Icon = "heartbeat" }
+        };
+
+        await Task.CompletedTask;
+    }
+
+    private void FilterByClients()
+    {
+        selectedFilter = selectedFilter == "clients" ? "all" : "clients";
+        ResetPagination();
+    }
+
+    private void FilterByFlags()
+    {
+        selectedFilter = selectedFilter == "flags" ? "all" : "flags";
+        ResetPagination();
+    }
+
+    private void FilterByToday()
+    {
+        selectedFilter = selectedFilter == "today" ? "all" : "today";
+        ResetPagination();
+    }
+
+    private void FilterByAll()
+    {
+        selectedFilter = "all";
+        ResetPagination();
+    }
+
+    private void ResetPagination()
+    {
+        flagsCurrentPage = 1;
+        appointmentsCurrentPage = 1;
+        clientsCurrentPage = 1;
+    }
+
+    // Flags pagination
+    private List<Flag> GetPagedFlags()
+    {
+        return filteredFlags
+            .Skip((flagsCurrentPage - 1) * ItemsPerPage)
+            .Take(ItemsPerPage)
+            .ToList();
+    }
+
+    private int GetFlagsTotalPages()
+    {
+        return (int)Math.Ceiling(filteredFlags.Count / (double)ItemsPerPage);
+    }
+
+    private void NextFlagsPage()
+    {
+        if (flagsCurrentPage < GetFlagsTotalPages())
+            flagsCurrentPage++;
+    }
+
+    private void PreviousFlagsPage()
+    {
+        if (flagsCurrentPage > 1)
+            flagsCurrentPage--;
+    }
+
+    // Appointments pagination
+    private List<Appointment> GetPagedAppointments()
+    {
+        return filteredAppointments
+            .Skip((appointmentsCurrentPage - 1) * ItemsPerPage)
+            .Take(ItemsPerPage)
+            .ToList();
+    }
+
+    private int GetAppointmentsTotalPages()
+    {
+        return (int)Math.Ceiling(filteredAppointments.Count / (double)ItemsPerPage);
+    }
+
+    private void NextAppointmentsPage()
+    {
+        if (appointmentsCurrentPage < GetAppointmentsTotalPages())
+            appointmentsCurrentPage++;
+    }
+
+    private void PreviousAppointmentsPage()
+    {
+        if (appointmentsCurrentPage > 1)
+            appointmentsCurrentPage--;
+    }
+
+    // Clients pagination
+    private List<Client> GetPagedClients()
+    {
+        return allClients
+            .Skip((clientsCurrentPage - 1) * ClientsPerPage)
+            .Take(ClientsPerPage)
+            .ToList();
+    }
+
+    private void NextClientsPage()
+    {
+        if (clientsCurrentPage * ClientsPerPage < allClients.Count)
+            clientsCurrentPage++;
+    }
+
+    private void PreviousClientsPage()
+    {
+        if (clientsCurrentPage > 1)
+            clientsCurrentPage--;
+    }
+
+    private List<Flag> FilterFlags()
+    {
+        return selectedFilter switch
+        {
+            "flags" => allFlags.Where(f => f.Priority == "High").ToList(),
+            "today" => allFlags.Take(0).ToList(),
+            _ => allFlags
+        };
+    }
+
+    private List<Appointment> FilterAppointments()
+    {
+        return selectedFilter switch
+        {
+            "today" => allAppointments.Where(a => a.Date == "Today").ToList(),
+            "flags" => allAppointments.Take(0).ToList(),
+            "clients" => allAppointments.Take(0).ToList(),
+            _ => allAppointments
+        };
+    }
+
+    public class Flag
+    {
+        public string ClientName { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Priority { get; set; } = "";
+        public string PriorityClass { get; set; } = "";
+        public string PriorityBadge { get; set; } = "";
+        public string CreatedDate { get; set; } = "";
+    }
+
+    public class Appointment
+    {
+        public string ClientName { get; set; } = "";
+        public string Type { get; set; } = "";
+        public string Time { get; set; } = "";
+        public string Date { get; set; } = "";
+        public string Icon { get; set; } = "";
+    }
+
+    public class Client
+    {
+        public string Name { get; set; } = "";
+        public string Initials { get; set; } = "";
+        public string NextSession { get; set; } = "";
+    }
+}
