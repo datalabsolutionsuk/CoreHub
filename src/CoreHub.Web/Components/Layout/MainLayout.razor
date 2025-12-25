@@ -1,4 +1,18 @@
 @inherits LayoutComponentBase
+@inject Services.SetupService SetupService
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Redirect to setup if not completed and not already on setup page
+        var currentUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
+        if (!SetupService.IsSetupCompleted && !currentUrl.StartsWith("setup") && !currentUrl.StartsWith("signup") && currentUrl != "" && !currentUrl.StartsWith("login"))
+        {
+            Navigation.NavigateTo("/setup", forceLoad: true);
+        }
+    }
+}
 
 <div class="page">
     <div class="sidebar">

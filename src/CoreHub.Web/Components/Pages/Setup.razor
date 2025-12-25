@@ -1,824 +1,1068 @@
 @page "/setup"
 @inject NavigationManager Navigation
+@inject Services.SetupService SetupService
 @rendermode @(new InteractiveServerRenderMode())
 
-<div class="setup-wizard">
-    <div class="setup-container">
-        <!-- Progress Indicator -->
-        <div class="setup-progress">
-            @for (int i = 1; i <= totalSteps; i++)
-            {
-                <div class="progress-step @(i < currentStep ? "completed" : "") @(i == currentStep ? "active" : "")">
-                    @if (i < currentStep)
-                    {
-                        <i class="fas fa-check"></i>
-                    }
+<div class="setup-overlay">
+    <div class="setup-wizard">
+        <div class="setup-header">
+            <div class="setup-logo">
+                <i class="fas fa-rocket"></i>
+                <h1>CoreHub Setup</h1>
+            </div>
+            <div class="setup-header-info">
+                <span class="setup-step-counter">Step @currentStep of @totalSteps</span>
+                <div class="setup-progress-bar">
+                    <div class="setup-progress-fill" style="width: @(((double)currentStep / totalSteps) * 100)%"></div>
                 </div>
-                @if (i < totalSteps)
-                {
-                    <div class="progress-line @(i < currentStep ? "completed" : "")"></div>
-                }
-            }
+            </div>
         </div>
 
-        <!-- Step Content -->
-        <div class="setup-content">
-            @if (currentStep == 1)
-            {
-                <div class="step-header">
-                    <h2>Hi and welcome aboard!</h2>
-                    <p>Let's get your practice set up in CoreHub</p>
-                </div>
-                <div class="welcome-card">
-                    <div class="welcome-icon">
-                        <i class="fas fa-rocket"></i>
-                    </div>
-                    <h3>Are you ready to dive into CoreHub?</h3>
-                    <p>Your practice management success awaits.</p>
-                </div>
-            }
-            else if (currentStep == 2)
-            {
-                <div class="step-header">
-                    <h2>What type of practice do you run?</h2>
-                    <p>This helps us customize your experience</p>
-                </div>
-                <div class="practice-types">
-                    @foreach (var type in practiceTypes)
-                    {
-                        <div class="practice-type-card @(setupData.PracticeType == type ? "selected" : "")" 
-                             @onclick="() => setupData.PracticeType = type">
-                            <i class="fas @GetPracticeTypeIcon(type)"></i>
-                            <span>@type</span>
+        <div class="setup-body">
+            <div class="setup-content-wrapper">
+                @if (currentStep == 1)
+                {
+                    <div class="setup-step fadeIn">
+                        <div class="setup-step-icon">
+                            <i class="fas fa-hand-wave"></i>
                         </div>
-                    }
-                </div>
-            }
-            else if (currentStep == 3)
-            {
-                <div class="step-header">
-                    <h2>Add your practice details</h2>
-                    <p>This makes it easier for you to create automated communications for clients and referrers.</p>
-                </div>
-                <div class="form-section">
-                    <div class="form-group">
-                        <label>Practice Name</label>
-                        <input type="text" class="form-control" @bind="setupData.PracticeName" placeholder="Enter practice name" />
-                    </div>
-                    <div class="form-group">
-                        <label>Street Address</label>
-                        <input type="text" class="form-control" @bind="setupData.StreetAddress" placeholder="Enter street address" />
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>City</label>
-                                <input type="text" class="form-control" @bind="setupData.City" placeholder="City" />
+                        <h2 class="setup-step-title">Welcome to CoreHub!</h2>
+                        <p class="setup-step-description">
+                            We're excited to have you here. Let's customize your practice in just a few minutes.
+                        </p>
+                        <div class="setup-benefits">
+                            <div class="benefit-item">
+                                <i class="fas fa-circle-check"></i>
+                                <span>Automated client management</span>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Postcode</label>
-                                <input type="text" class="form-control" @bind="setupData.Postcode" placeholder="Postcode" />
+                            <div class="benefit-item">
+                                <i class="fas fa-circle-check"></i>
+                                <span>Smart scheduling & reminders</span>
+                            </div>
+                            <div class="benefit-item">
+                                <i class="fas fa-circle-check"></i>
+                                <span>Integrated billing & invoicing</span>
                             </div>
                         </div>
                     </div>
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="defaultLocation" @bind="setupData.UseAsDefaultLocation" />
-                        <label class="form-check-label" for="defaultLocation">Use this address as your default location</label>
-                    </div>
-                </div>
-            }
-            else if (currentStep == 4)
-            {
-                <div class="step-header">
-                    <h2>Business Phone Number</h2>
-                    <p>What phone number do clients use to contact you?</p>
-                </div>
-                <div class="form-section">
-                    <div class="form-group">
-                        <label>Phone Number</label>
-                        <input type="tel" class="form-control" @bind="setupData.PhoneNumber" placeholder="Enter phone number" />
-                    </div>
-                    <div class="info-box">
-                        <i class="fas fa-info-circle"></i>
-                        <p>Don't worry- we don't have a sales team so we won't be chasing you down.</p>
-                    </div>
-                </div>
-            }
-            else if (currentStep == 5)
-            {
-                <div class="step-header">
-                    <h2>Check your practitioner name</h2>
-                    <p>We created your practitioner profile. Update how your name appears.</p>
-                </div>
-                <div class="form-section">
-                    <div class="form-group">
-                        <label>Name in CoreHub</label>
-                        <input type="text" class="form-control" @bind="setupData.PractitionerDisplayName" placeholder="Display name" />
-                    </div>
-                    <div class="form-group">
-                        <label>Name on invoices and official documents</label>
-                        <input type="text" class="form-control" @bind="setupData.PractitionerOfficialName" placeholder="Official name" />
-                    </div>
-                </div>
-            }
-            else if (currentStep == 6)
-            {
-                <div class="step-header">
-                    <h2>Set Your Availability</h2>
-                    <p>Set the days and times you'd like your calendar to be open for bookings. You can add overrides and personal appointments later.</p>
-                </div>
-                <div class="availability-section">
-                    @foreach (var day in setupData.Availability)
-                    {
-                        <div class="availability-row">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="@day.Day" @bind="day.IsAvailable" />
-                                <label class="form-check-label day-label" for="@day.Day">@day.Day.ToUpper()</label>
-                            </div>
-                            @if (day.IsAvailable)
+                }
+                else if (currentStep == 2)
+                {
+                    <div class="setup-step fadeIn">
+                        <div class="setup-step-icon">
+                            <i class="fas fa-hospital"></i>
+                        </div>
+                        <h2 class="setup-step-title">What type of practice are you running?</h2>
+                        <p class="setup-step-description">Choose the option that best describes your practice</p>
+                        
+                        <div class="practice-type-grid">
+                            @foreach (var type in practiceTypes)
                             {
-                                <div class="time-inputs">
-                                    <select class="form-select" @bind="day.StartTime">
-                                        @for (int h = 6; h <= 20; h++)
-                                        {
-                                            <option value="@h:00">@h:00</option>
-                                            <option value="@h:30">@h:30</option>
-                                        }
-                                    </select>
-                                    <span>–</span>
-                                    <select class="form-select" @bind="day.EndTime">
-                                        @for (int h = 6; h <= 21; h++)
-                                        {
-                                            <option value="@h:00">@h:00</option>
-                                            <option value="@h:30">@h:30</option>
-                                        }
-                                    </select>
-                                    <button class="btn btn-link text-danger" @onclick="() => day.IsAvailable = false">
-                                        <i class="fas fa-times"></i>
-                                    </button>
+                                <div class="practice-type-option @(setupData.PracticeType == type ? "selected" : "")" 
+                                     @onclick="() => setupData.PracticeType = type">
+                                    <i class="fas @GetPracticeIcon(type)"></i>
+                                    <span>@type</span>
+                                    @if (setupData.PracticeType == type)
+                                    {
+                                        <i class="fas fa-check-circle selection-check"></i>
+                                    }
                                 </div>
                             }
-                            else
+                        </div>
+                    </div>
+                }
+                else if (currentStep == 3)
+                {
+                    <div class="setup-step fadeIn">
+                        <div class="setup-step-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <h2 class="setup-step-title">Tell us about your practice</h2>
+                        <p class="setup-step-description">We'll use this information across the platform</p>
+                        
+                        <div class="setup-form">
+                            <div class="form-group">
+                                <label>Practice Name <span class="required">*</span></label>
+                                <input type="text" class="form-control" @bind="setupData.PracticeName" placeholder="e.g., Wellness Psychology Clinic" />
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Street Address</label>
+                                    <input type="text" class="form-control" @bind="setupData.StreetAddress" placeholder="123 Main Street" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>City</label>
+                                    <input type="text" class="form-control" @bind="setupData.City" placeholder="London" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Postcode</label>
+                                    <input type="text" class="form-control" @bind="setupData.Postcode" placeholder="SW1A 1AA" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" class="form-control" @bind="setupData.PhoneNumber" placeholder="020 1234 5678" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (currentStep == 4)
+                {
+                    <div class="setup-step fadeIn">
+                        <div class="setup-step-icon">
+                            <i class="fas fa-user-doctor"></i>
+                        </div>
+                        <h2 class="setup-step-title">How should clients see your name?</h2>
+                        <p class="setup-step-description">This appears on appointment bookings and client communications</p>
+                        
+                        <div class="setup-form">
+                            <div class="form-group">
+                                <label>Display Name <span class="required">*</span></label>
+                                <input type="text" class="form-control" @bind="setupData.PractitionerDisplayName" placeholder="Dr. Sarah Johnson" />
+                                <small class="form-text">This is how clients will see your name in the portal</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Official/Legal Name</label>
+                                <input type="text" class="form-control" @bind="setupData.PractitionerOfficialName" placeholder="Dr. Sarah Jane Johnson, Ph.D." />
+                                <small class="form-text">Used for official documents and reports</small>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (currentStep == 5)
+                {
+                    <div class="setup-step fadeIn">
+                        <div class="setup-step-icon">
+                            <i class="fas fa-briefcase-medical"></i>
+                        </div>
+                        <h2 class="setup-step-title">What services do you offer?</h2>
+                        <p class="setup-step-description">Add your main services with pricing</p>
+                        
+                        <div class="services-list">
+                            @foreach (var service in setupData.Services)
                             {
-                                <span class="text-muted">Unavailable</span>
+                                <div class="service-item">
+                                    <div class="service-row">
+                                        <input type="text" class="form-control" @bind="service.Name" placeholder="Service name" />
+                                        <input type="number" class="form-control service-duration" @bind="service.Duration" placeholder="Minutes" />
+                                        <div class="input-group service-price">
+                                            <span class="input-group-text">£</span>
+                                            <input type="number" class="form-control" @bind="service.Price" placeholder="0.00" step="0.01" />
+                                        </div>
+                                        <button class="btn-remove" @onclick="() => RemoveService(service)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             }
                         </div>
-                    }
-                </div>
-            }
-            else if (currentStep == 7)
-            {
-                <div class="step-header">
-                    <h2>Add some services</h2>
-                    <p>These will make it faster for you to create appointments.</p>
-                </div>
-                <div class="services-section">
-                    <div class="services-header">
-                        <div>Service</div>
-                        <div>Duration (minutes)</div>
-                        <div>Price</div>
-                        <div></div>
+                        <button class="btn-add-service" @onclick="AddService">
+                            <i class="fas fa-plus"></i> Add Another Service
+                        </button>
                     </div>
-                    @foreach (var service in setupData.Services)
-                    {
-                        <div class="service-row">
-                            <input type="text" class="form-control" @bind="service.Name" placeholder="Service name" />
-                            <input type="number" class="form-control" @bind="service.Duration" placeholder="60" />
-                            <div class="price-input">
-                                <span class="currency">£</span>
-                                <input type="number" class="form-control" @bind="service.Price" placeholder="0.00" step="0.01" />
+                }
+                else if (currentStep == 6)
+                {
+                    <div class="setup-step fadeIn">
+                        <div class="setup-step-icon">
+                            <i class="fas fa-calendar-days"></i>
+                        </div>
+                        <h2 class="setup-step-title">When are you available?</h2>
+                        <p class="setup-step-description">Set your weekly schedule</p>
+                        
+                        <div class="availability-list">
+                            @foreach (var day in setupData.Availability)
+                            {
+                                <div class="availability-row">
+                                    <div class="day-toggle">
+                                        <input type="checkbox" id="day-@day.Day" @bind="day.IsAvailable" />
+                                        <label for="day-@day.Day">@day.Day</label>
+                                    </div>
+                                    @if (day.IsAvailable)
+                                    {
+                                        <div class="time-inputs">
+                                            <select class="form-control time-select" @bind="day.StartTime">
+                                                @foreach (var time in GenerateTimeOptions())
+                                                {
+                                                    <option value="@time">@time</option>
+                                                }
+                                            </select>
+                                            <span class="time-separator">to</span>
+                                            <select class="form-control time-select" @bind="day.EndTime">
+                                                @foreach (var time in GenerateTimeOptions())
+                                                {
+                                                    <option value="@time">@time</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="unavailable-text">Unavailable</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (currentStep == 7)
+                {
+                    <div class="setup-step fadeIn">
+                        <div class="setup-step-icon">
+                            <i class="fas fa-sliders"></i>
+                        </div>
+                        <h2 class="setup-step-title">Booking preferences</h2>
+                        <p class="setup-step-description">Customize how clients can book with you</p>
+                        
+                        <div class="preference-cards">
+                            <div class="preference-card">
+                                <div class="preference-header">
+                                    <i class="fas fa-globe"></i>
+                                    <h3>Online Bookings</h3>
+                                </div>
+                                <p>Allow clients to book appointments through your portal</p>
+                                <div class="preference-toggle">
+                                    <label class="switch">
+                                        <input type="checkbox" @bind="setupData.AllowOnlineBookings" />
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="toggle-label">@(setupData.AllowOnlineBookings ? "Enabled" : "Disabled")</span>
+                                </div>
                             </div>
-                            <button class="btn btn-link text-danger" @onclick="() => RemoveService(service)">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    }
-                    <button class="btn btn-link" @onclick="AddService">
-                        <i class="fas fa-plus"></i> Add Service
-                    </button>
-                </div>
-            }
-            else if (currentStep == 8)
-            {
-                <div class="step-header">
-                    <h2>Get ready for online bookings</h2>
-                    <p>Do you want your clients to be able to book online?</p>
-                </div>
-                <div class="options-section">
-                    <div class="option-card @(setupData.AllowOnlineBookings ? "selected" : "")" 
-                         @onclick="() => setupData.AllowOnlineBookings = true">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Yes</span>
-                    </div>
-                    <div class="option-card @(!setupData.AllowOnlineBookings ? "selected" : "")" 
-                         @onclick="() => setupData.AllowOnlineBookings = false">
-                        <i class="fas fa-times-circle"></i>
-                        <span>No</span>
-                    </div>
-                </div>
-            }
-            else if (currentStep == 9)
-            {
-                <div class="step-header">
-                    <h2>Decide who can book online</h2>
-                    <p>Do you want to allow new clients to book appointments online?</p>
-                </div>
-                <div class="options-section">
-                    <div class="option-card @(setupData.AllowNewClients ? "selected" : "")" 
-                         @onclick="() => setupData.AllowNewClients = true">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Yes</span>
-                    </div>
-                    <div class="option-card @(!setupData.AllowNewClients ? "selected" : "")" 
-                         @onclick="() => setupData.AllowNewClients = false">
-                        <i class="fas fa-times-circle"></i>
-                        <span>No</span>
-                    </div>
-                </div>
-            }
-            else if (currentStep == 10)
-            {
-                <div class="step-header">
-                    <h2>Set your notice time</h2>
-                    <p>How much notice time do you need for online bookings?</p>
-                </div>
-                <div class="form-section">
-                    <div class="form-group">
-                        <label>Minimum notice time</label>
-                        <select class="form-select" @bind="setupData.MinimumNoticeTime">
-                            <option value="1">1 hour ahead</option>
-                            <option value="2">2 hours ahead</option>
-                            <option value="3">3 hours ahead</option>
-                            <option value="6">6 hours ahead</option>
-                            <option value="12">12 hours ahead</option>
-                            <option value="24">24 hours ahead</option>
-                            <option value="48">2 days ahead</option>
-                            <option value="72">3 days ahead</option>
-                        </select>
-                    </div>
-                </div>
-            }
-            else if (currentStep == 11)
-            {
-                <div class="step-header">
-                    <h2>Choose how to handle cancellations</h2>
-                    <p>What is your cancellation policy?</p>
-                </div>
-                <div class="form-section">
-                    <div class="form-group">
-                        <label>Cancellation Policy</label>
-                        <select class="form-select" @bind="setupData.CancellationPolicy">
-                            <option value="none">No Cancellations Via Portal</option>
-                            <option value="anytime">Anytime</option>
-                            <option value="3">3 Hours Before Appointment</option>
-                            <option value="6">6 Hours Before Appointment</option>
-                            <option value="8">8 Hours Before Appointment</option>
-                            <option value="12">12 Hours Before Appointment</option>
-                            <option value="24">One Day Before Appointment</option>
-                            <option value="48">Two Days Before Appointment</option>
-                            <option value="72">Three Days Before Appointment</option>
-                            <option value="96">Four Days Before Appointment</option>
-                            <option value="168">One Week Before Appointment</option>
-                        </select>
-                    </div>
-                </div>
-            }
-            else if (currentStep == 12)
-            {
-                <div class="step-header">
-                    <h2>Check out your Online Portal!</h2>
-                    <p>Great! Your Online Portal is ready to accept bookings.</p>
-                </div>
-                <div class="portal-info">
-                    <div class="portal-card">
-                        <h4>View your Client Portal</h4>
-                        <a href="#" class="portal-link">https://clientportal.corehub.com/clientportal/@GeneratePortalId()</a>
-                        <p class="text-muted">You can update the URL later.</p>
-                    </div>
-                </div>
-            }
-            else if (currentStep == 13)
-            {
-                <div class="step-header">
-                    <h2>Well done!</h2>
-                    <p>Your initial setup is complete. You can learn about more CoreHub features here...</p>
-                </div>
-                <div class="resources-grid">
-                    <div class="resource-card blue">
-                        <h4>Getting started with CoreHub</h4>
-                        <div class="resource-links">
-                            <a href="#">Video Guide</a>
-                            <a href="#">Help Article</a>
+                            
+                            <div class="preference-card">
+                                <div class="preference-header">
+                                    <i class="fas fa-user-plus"></i>
+                                    <h3>Accept New Clients</h3>
+                                </div>
+                                <p>Allow new clients to book their first appointment</p>
+                                <div class="preference-toggle">
+                                    <label class="switch">
+                                        <input type="checkbox" @bind="setupData.AllowNewClients" />
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="toggle-label">@(setupData.AllowNewClients ? "Enabled" : "Disabled")</span>
+                                </div>
+                            </div>
+                            
+                            <div class="preference-card">
+                                <div class="preference-header">
+                                    <i class="fas fa-clock"></i>
+                                    <h3>Advance Notice</h3>
+                                </div>
+                                <p>Minimum notice time for bookings</p>
+                                <select class="form-control" @bind="setupData.MinimumNoticeTime">
+                                    <option value="1">1 hour</option>
+                                    <option value="2">2 hours</option>
+                                    <option value="4">4 hours</option>
+                                    <option value="12">12 hours</option>
+                                    <option value="24">24 hours</option>
+                                    <option value="48">48 hours</option>
+                                    <option value="72">72 hours</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="resource-card purple">
-                        <h4>Complete your CoreHub Account Setup</h4>
-                        <div class="resource-links">
-                            <a href="#">Video Guide</a>
-                            <a href="#">Help Article</a>
+                }
+                else if (currentStep == 8)
+                {
+                    <div class="setup-step fadeIn">
+                        <div class="setup-step-icon success">
+                            <i class="fas fa-party-horn"></i>
+                        </div>
+                        <h2 class="setup-step-title">You're all set!</h2>
+                        <p class="setup-step-description">
+                            Great job! Your CoreHub account is ready to go.
+                        </p>
+                        
+                        <div class="completion-summary">
+                            <div class="summary-item">
+                                <i class="fas fa-building"></i>
+                                <div>
+                                    <strong>@setupData.PracticeName</strong>
+                                    <span>@setupData.PracticeType</span>
+                                </div>
+                            </div>
+                            <div class="summary-item">
+                                <i class="fas fa-briefcase-medical"></i>
+                                <div>
+                                    <strong>@setupData.Services.Count Services</strong>
+                                    <span>Ready for booking</span>
+                                </div>
+                            </div>
+                            <div class="summary-item">
+                                <i class="fas fa-calendar-check"></i>
+                                <div>
+                                    <strong>@setupData.Availability.Count(d => d.IsAvailable) Days Available</strong>
+                                    <span>Weekly schedule configured</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="next-steps">
+                            <h3>What's Next?</h3>
+                            <ul>
+                                <li><i class="fas fa-arrow-right"></i> Add your first client</li>
+                                <li><i class="fas fa-arrow-right"></i> Set up automated reminders</li>
+                                <li><i class="fas fa-arrow-right"></i> Explore your dashboard</li>
+                            </ul>
                         </div>
                     </div>
-                    <div class="resource-card pink">
-                        <h4>Set up Reminders & Automatic Communications</h4>
-                        <div class="resource-links">
-                            <a href="#">Video Guide</a>
-                            <a href="#">Help Article</a>
-                        </div>
-                    </div>
-                    <div class="resource-card gray">
-                        <h4>Add Session Notes</h4>
-                        <div class="resource-links">
-                            <a href="#">Video Guide</a>
-                            <a href="#">Help Article</a>
-                        </div>
-                    </div>
-                    <div class="resource-card orange">
-                        <h4>Add Services and Products</h4>
-                        <div class="resource-links">
-                            <a href="#">Video Guide</a>
-                            <a href="#">Help Article</a>
-                        </div>
-                    </div>
-                    <div class="resource-card green">
-                        <h4>Start with Online Forms</h4>
-                        <div class="resource-links">
-                            <a href="#">Video Guide</a>
-                            <a href="#">Help Article</a>
-                        </div>
-                    </div>
-                    <div class="resource-card blue-light">
-                        <h4>Start with Communication Templates</h4>
-                        <div class="resource-links">
-                            <a href="#">Video Guide</a>
-                            <a href="#">Help Article</a>
-                        </div>
-                    </div>
-                    <div class="resource-card purple-light">
-                        <h4>Set up your Client Portal</h4>
-                        <div class="resource-links">
-                            <a href="#">Video Guide</a>
-                            <a href="#">Help Article</a>
-                        </div>
-                    </div>
-                </div>
-            }
+                }
+            </div>
         </div>
 
-        <!-- Navigation Buttons -->
-        <div class="setup-actions">
-            @if (currentStep > 1 && currentStep < 13)
+        <div class="setup-footer">
+            <button class="btn-secondary" @onclick="PreviousStep" disabled="@(currentStep == 1)">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            
+            <div class="setup-dots">
+                @for (int i = 1; i <= totalSteps; i++)
+                {
+                    <span class="dot @(i == currentStep ? "active" : "") @(i < currentStep ? "completed" : "")"></span>
+                }
+            </div>
+            
+            @if (currentStep < totalSteps)
             {
-                <button class="btn btn-outline-primary" @onclick="GoBack">
-                    <i class="fas fa-arrow-left"></i> BACK
+                <button class="btn-primary" @onclick="NextStep" disabled="@(!CanProceed())">
+                    Next <i class="fas fa-arrow-right"></i>
                 </button>
             }
             else
             {
-                <div></div>
+                <button class="btn-success" @onclick="CompleteSetup">
+                    Get Started <i class="fas fa-rocket"></i>
+                </button>
             }
-
-            <div class="right-actions">
-                @if (currentStep > 1 && currentStep < 12)
-                {
-                    <button class="btn btn-link skip-btn" @onclick="SkipStep">SKIP FOR NOW</button>
-                }
-                @if (currentStep < 13)
-                {
-                    <button class="btn btn-primary next-btn" @onclick="GoNext">
-                        NEXT <i class="fas fa-arrow-right"></i>
-                    </button>
-                }
-                else
-                {
-                    <button class="btn btn-primary next-btn" @onclick="CompleteSetup">
-                        DONE <i class="fas fa-check"></i>
-                    </button>
-                }
-            </div>
         </div>
     </div>
 </div>
 
 <style>
-.setup-wizard {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+    .setup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        overflow-y: auto;
+        padding: 2rem 1rem;
+    }
 
-.setup-container {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    max-width: 900px;
-    width: 100%;
-    padding: 3rem;
-}
+    .setup-wizard {
+        background: white;
+        border-radius: 24px;
+        max-width: 800px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+    }
 
-.setup-progress {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 3rem;
-}
+    .setup-header {
+        padding: 2rem 2.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
 
-.progress-step {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #e9ecef;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #6c757d;
-    font-size: 14px;
-    transition: all 0.3s;
-}
+    .setup-logo {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
 
-.progress-step.active {
-    background: #667eea;
-    color: white;
-    transform: scale(1.2);
-}
+    .setup-logo i {
+        font-size: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 
-.progress-step.completed {
-    background: #667eea;
-    color: white;
-}
+    .setup-logo h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
 
-.progress-line {
-    width: 40px;
-    height: 2px;
-    background: #e9ecef;
-    transition: all 0.3s;
-}
+    .setup-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 
-.progress-line.completed {
-    background: #667eea;
-}
+    .setup-step-counter {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
 
-.setup-content {
-    min-height: 400px;
-    margin-bottom: 2rem;
-}
+    .setup-progress-bar {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+    }
 
-.step-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+    .setup-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 999px;
+        transition: width 0.3s ease;
+    }
 
-.step-header h2 {
-    font-size: 28px;
-    color: #2d3748;
-    margin-bottom: 0.5rem;
-}
+    .setup-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2.5rem;
+    }
 
-.step-header p {
-    color: #718096;
-    font-size: 16px;
-}
+    .setup-content-wrapper {
+        min-height: 400px;
+    }
 
-.welcome-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 16px;
-    padding: 3rem;
-    text-align: center;
-    color: white;
-}
+    .setup-step {
+        animation: fadeIn 0.4s ease;
+    }
 
-.welcome-icon {
-    font-size: 64px;
-    margin-bottom: 1rem;
-}
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
-.welcome-card h3 {
-    font-size: 24px;
-    margin-bottom: 1rem;
-}
+    .setup-step-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
 
-.practice-types {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 2rem;
-}
+    .setup-step-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
 
-.practice-type-card {
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-}
+    .setup-step-icon.success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
 
-.practice-type-card:hover {
-    border-color: #667eea;
-    transform: translateY(-2px);
-}
+    .setup-step-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+        text-align: center;
+        margin-bottom: 0.75rem;
+    }
 
-.practice-type-card.selected {
-    border-color: #667eea;
-    background: #f0f4ff;
-}
+    .setup-step-description {
+        font-size: 1.125rem;
+        color: #6b7280;
+        text-align: center;
+        margin-bottom: 2.5rem;
+        line-height: 1.6;
+    }
 
-.practice-type-card i {
-    font-size: 32px;
-    color: #667eea;
-    margin-bottom: 0.5rem;
-    display: block;
-}
+    .setup-benefits {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-width: 500px;
+        margin: 2rem auto 0;
+    }
 
-.form-section {
-    max-width: 600px;
-    margin: 0 auto;
-}
+    .benefit-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        background: #f9fafb;
+        border-radius: 12px;
+    }
 
-.form-group {
-    margin-bottom: 1.5rem;
-}
+    .benefit-item i {
+        font-size: 1.5rem;
+        color: #10b981;
+    }
 
-.form-group label {
-    font-weight: 500;
-    color: #2d3748;
-    margin-bottom: 0.5rem;
-    display: block;
-}
+    .benefit-item span {
+        font-size: 1rem;
+        color: #374151;
+        font-weight: 500;
+    }
 
-.info-box {
-    background: #f0f4ff;
-    border-left: 4px solid #667eea;
-    padding: 1rem;
-    border-radius: 8px;
-    display: flex;
-    align-items: start;
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
+    .practice-type-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1rem;
+    }
 
-.info-box i {
-    color: #667eea;
-    font-size: 20px;
-    margin-top: 2px;
-}
+    .practice-type-option {
+        padding: 1.5rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
 
-.availability-section {
-    max-width: 700px;
-    margin: 0 auto;
-}
+    .practice-type-option:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
 
-.availability-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    border-bottom: 1px solid #e9ecef;
-}
+    .practice-type-option.selected {
+        border-color: #667eea;
+        background: #f5f7ff;
+    }
 
-.day-label {
-    font-weight: 600;
-    min-width: 80px;
-}
+    .practice-type-option i {
+        font-size: 2rem;
+        color: #667eea;
+        display: block;
+        margin-bottom: 0.75rem;
+    }
 
-.time-inputs {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+    .practice-type-option span {
+        display: block;
+        font-weight: 500;
+        color: #1f2937;
+    }
 
-.time-inputs select {
-    width: 130px;
-}
+    .selection-check {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        color: #10b981;
+        font-size: 1.25rem;
+    }
 
-.services-section {
-    max-width: 800px;
-    margin: 0 auto;
-}
+    .setup-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
 
-.services-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 40px;
-    gap: 1rem;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
-    color: #4a5568;
-    border-bottom: 2px solid #e9ecef;
-    margin-bottom: 1rem;
-}
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
 
-.service-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 40px;
-    gap: 1rem;
-    align-items: center;
-    margin-bottom: 1rem;
-}
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 
-.price-input {
-    position: relative;
-}
+    .form-group label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
 
-.price-input .currency {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6c757d;
-}
+    .required {
+        color: #ef4444;
+    }
 
-.price-input input {
-    padding-left: 28px;
-}
+    .form-control {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
 
-.options-section {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    margin-top: 2rem;
-}
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
 
-.option-card {
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 2rem 3rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    min-width: 150px;
-}
+    .form-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
 
-.option-card:hover {
-    border-color: #667eea;
-    transform: translateY(-2px);
-}
+    .services-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
 
-.option-card.selected {
-    border-color: #667eea;
-    background: #f0f4ff;
-}
+    .service-item {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 1rem;
+    }
 
-.option-card i {
-    font-size: 48px;
-    color: #667eea;
-    margin-bottom: 0.5rem;
-    display: block;
-}
+    .service-row {
+        display: grid;
+        grid-template-columns: 2fr 120px 140px 40px;
+        gap: 0.75rem;
+        align-items: center;
+    }
 
-.option-card span {
-    font-size: 18px;
-    font-weight: 600;
-}
+    .service-duration {
+        width: 100%;
+    }
 
-.portal-info {
-    max-width: 600px;
-    margin: 2rem auto;
-}
+    .service-price {
+        width: 100%;
+    }
 
-.portal-card {
-    background: #f0f4ff;
-    border: 2px solid #667eea;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-}
+    .input-group {
+        display: flex;
+    }
 
-.portal-card h4 {
-    color: #2d3748;
-    margin-bottom: 1rem;
-}
+    .input-group-text {
+        padding: 0.75rem 1rem;
+        background: #e5e7eb;
+        border: 2px solid #e5e7eb;
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+        font-weight: 600;
+    }
 
-.portal-link {
-    color: #667eea;
-    font-weight: 600;
-    font-size: 16px;
-    word-break: break-all;
-    text-decoration: none;
-}
+    .input-group .form-control {
+        border-radius: 0 8px 8px 0;
+    }
 
-.portal-link:hover {
-    text-decoration: underline;
-}
+    .btn-remove {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: #fee2e2;
+        color: #dc2626;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
 
-.resources-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
-}
+    .btn-remove:hover {
+        background: #fecaca;
+    }
 
-.resource-card {
-    border-radius: 12px;
-    padding: 1.5rem;
-    color: white;
-    transition: transform 0.3s;
-}
+    .btn-add-service {
+        padding: 0.75rem 1.5rem;
+        border: 2px dashed #d1d5db;
+        background: transparent;
+        color: #667eea;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: center;
+    }
 
-.resource-card:hover {
-    transform: translateY(-4px);
-}
+    .btn-add-service:hover {
+        border-color: #667eea;
+        background: #f5f7ff;
+    }
 
-.resource-card h4 {
-    font-size: 16px;
-    margin-bottom: 1rem;
-    min-height: 48px;
-}
+    .availability-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
 
-.resource-card.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.resource-card.purple { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); }
-.resource-card.pink { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-.resource-card.gray { background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%); }
-.resource-card.orange { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-.resource-card.green { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
-.resource-card.blue-light { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #2d3748; }
-.resource-card.purple-light { background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); color: #2d3748; }
+    .availability-row {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 1.5rem;
+        align-items: center;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 12px;
+    }
 
-.resource-links {
-    display: flex;
-    gap: 1rem;
-}
+    .day-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
 
-.resource-links a {
-    color: inherit;
-    text-decoration: underline;
-    font-size: 14px;
-}
+    .day-toggle input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
 
-.setup-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 1px solid #e9ecef;
-}
+    .day-toggle label {
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        margin: 0;
+    }
 
-.right-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
+    .time-inputs {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
 
-.skip-btn {
-    color: #667eea;
-    font-weight: 600;
-}
+    .time-select {
+        flex: 1;
+    }
 
-.next-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    padding: 0.75rem 2rem;
-    font-weight: 600;
-}
+    .time-separator {
+        color: #6b7280;
+        font-weight: 500;
+    }
 
-.next-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
+    .unavailable-text {
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .preference-cards {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .preference-card {
+        padding: 1.5rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+
+    .preference-card:hover {
+        border-color: #d1d5db;
+    }
+
+    .preference-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .preference-header i {
+        font-size: 1.5rem;
+        color: #667eea;
+    }
+
+    .preference-header h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .preference-card > p {
+        color: #6b7280;
+        margin-bottom: 1.25rem;
+    }
+
+    .preference-toggle {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: 0.3s;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .toggle-label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .completion-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+
+    .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.25rem;
+        background: #f9fafb;
+        border-radius: 12px;
+    }
+
+    .summary-item i {
+        font-size: 1.75rem;
+        color: #667eea;
+    }
+
+    .summary-item div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .summary-item strong {
+        color: #1f2937;
+        font-size: 1.125rem;
+    }
+
+    .summary-item span {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .next-steps {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f0f4ff 0%, #f5f3ff 100%);
+        border-radius: 12px;
+    }
+
+    .next-steps h3 {
+        margin: 0 0 1rem 0;
+        color: #1f2937;
+        font-size: 1.125rem;
+    }
+
+    .next-steps ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .next-steps li {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .next-steps li i {
+        color: #667eea;
+    }
+
+    .setup-footer {
+        padding: 1.5rem 2.5rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .setup-dots {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #d1d5db;
+        transition: all 0.3s;
+    }
+
+    .dot.active {
+        width: 24px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .dot.completed {
+        background: #10b981;
+    }
+
+    .btn-secondary,
+    .btn-primary,
+    .btn-success {
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: #e5e7eb;
+    }
+
+    .btn-secondary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    @@media (max-width: 768px) {
+        .setup-overlay {
+            padding: 0;
+        }
+
+        .setup-wizard {
+            border-radius: 0;
+            max-height: 100vh;
+        }
+
+        .setup-header,
+        .setup-body,
+        .setup-footer {
+            padding: 1.5rem;
+        }
+
+        .practice-type-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .service-row {
+            grid-template-columns: 1fr;
+        }
+
+        .availability-row {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .setup-step-title {
+            font-size: 1.5rem;
+        }
+    }
 </style>
 
 @code {
     private int currentStep = 1;
-    private int totalSteps = 13;
+    private int totalSteps = 8;
+    private SetupData setupData = new();
 
-    private SetupData setupData = new SetupData
+    private string[] practiceTypes = new[]
     {
-        PractitionerDisplayName = "Admin User",
-        Availability = new List<DayAvailability>
-        {
-            new DayAvailability { Day = "mon", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
-            new DayAvailability { Day = "tue", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
-            new DayAvailability { Day = "wed", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
-            new DayAvailability { Day = "thu", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
-            new DayAvailability { Day = "fri", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
-            new DayAvailability { Day = "sat", IsAvailable = false },
-            new DayAvailability { Day = "sun", IsAvailable = false }
-        },
-        Services = new List<ServiceData>
-        {
-            new ServiceData { Name = "Initial Consultation", Duration = 60, Price = 120.00m },
-            new ServiceData { Name = "Standard Consultation", Duration = 60, Price = 170.00m }
-        },
-        AllowOnlineBookings = true,
-        AllowNewClients = true,
-        MinimumNoticeTime = "12",
-        CancellationPolicy = "none"
+        "Psychology", "Psychotherapy", "Counselling", "Psychiatry",
+        "Physiotherapy", "Occupational Therapy", "Speech Therapy",
+        "Dietetics", "Podiatry", "Chiropractic", "Osteopathy",
+        "Acupuncture", "Massage Therapy", "Other"
     };
 
-    private List<string> practiceTypes = new List<string>
+    protected override void OnInitialized()
     {
-        "Psychology", "Physiotherapy", "Podiatry", "Speech Pathology",
-        "Chiropractic", "Osteopathy", "Massage Therapy", "Multidisciplinary",
-        "Naturopathy", "Nutrition", "Occupational Therapy", "Other Health Care",
-        "Other Services", "Personal Training", "Social Work", "Acupuncture & Chinese Medicine",
-        "Beauty Aesthetics", "Counselling", "Dietetics", "General Practice"
-    };
+        setupData.Availability = new List<DayAvailability>
+        {
+            new() { Day = "Monday", IsAvailable = true },
+            new() { Day = "Tuesday", IsAvailable = true },
+            new() { Day = "Wednesday", IsAvailable = true },
+            new() { Day = "Thursday", IsAvailable = true },
+            new() { Day = "Friday", IsAvailable = true },
+            new() { Day = "Saturday", IsAvailable = false },
+            new() { Day = "Sunday", IsAvailable = false }
+        };
 
-    private void GoNext()
+        setupData.Services = new List<ServiceData>
+        {
+            new() { Name = "", Duration = 60, Price = 0 }
+        };
+    }
+
+    private void NextStep()
     {
         if (currentStep < totalSteps)
         {
@@ -826,7 +1070,7 @@
         }
     }
 
-    private void GoBack()
+    private void PreviousStep()
     {
         if (currentStep > 1)
         {
@@ -834,20 +1078,20 @@
         }
     }
 
-    private void SkipStep()
+    private bool CanProceed()
     {
-        GoNext();
-    }
-
-    private void CompleteSetup()
-    {
-        // Save setup data to database here
-        Navigation.NavigateTo("/dashboard");
+        return currentStep switch
+        {
+            2 => !string.IsNullOrWhiteSpace(setupData.PracticeType),
+            3 => !string.IsNullOrWhiteSpace(setupData.PracticeName),
+            4 => !string.IsNullOrWhiteSpace(setupData.PractitionerDisplayName),
+            _ => true
+        };
     }
 
     private void AddService()
     {
-        setupData.Services.Add(new ServiceData { Duration = 60, Price = 0 });
+        setupData.Services.Add(new ServiceData { Name = "", Duration = 60, Price = 0 });
     }
 
     private void RemoveService(ServiceData service)
@@ -858,27 +1102,46 @@
         }
     }
 
-    private string GetPracticeTypeIcon(string type)
+    private List<string> GenerateTimeOptions()
+    {
+        var times = new List<string>();
+        for (int hour = 6; hour <= 21; hour++)
+        {
+            times.Add($"{hour:D2}:00");
+            if (hour < 21)
+            {
+                times.Add($"{hour:D2}:30");
+            }
+        }
+        return times;
+    }
+
+    private string GetPracticeIcon(string type)
     {
         return type switch
         {
             "Psychology" => "fa-brain",
-            "Physiotherapy" => "fa-walking",
+            "Psychotherapy" => "fa-comments",
+            "Counselling" => "fa-user-tie",
+            "Psychiatry" => "fa-head-side-medical",
+            "Physiotherapy" => "fa-person-walking",
+            "Occupational Therapy" => "fa-hands-helping",
+            "Speech Therapy" => "fa-microphone",
+            "Dietetics" => "fa-apple-whole",
             "Podiatry" => "fa-shoe-prints",
-            "Speech Pathology" => "fa-comments",
             "Chiropractic" => "fa-spine",
             "Osteopathy" => "fa-bone",
+            "Acupuncture" => "fa-syringe",
             "Massage Therapy" => "fa-hands",
-            "Nutrition" => "fa-apple-alt",
-            "Counselling" => "fa-user-friends",
-            "General Practice" => "fa-stethoscope",
-            _ => "fa-heartbeat"
+            _ => "fa-stethoscope"
         };
     }
 
-    private string GeneratePortalId()
+    private void CompleteSetup()
     {
-        return setupData.PracticeName?.ToLower().Replace(" ", "") ?? "practice" + new Random().Next(100, 999);
+        // TODO: Save setup data to database
+        SetupService.CompleteSetup();
+        Navigation.NavigateTo("/dashboard", forceLoad: true);
     }
 
     public class SetupData
@@ -888,16 +1151,14 @@
         public string StreetAddress { get; set; } = "";
         public string City { get; set; } = "";
         public string Postcode { get; set; } = "";
-        public bool UseAsDefaultLocation { get; set; }
         public string PhoneNumber { get; set; } = "";
         public string PractitionerDisplayName { get; set; } = "";
         public string PractitionerOfficialName { get; set; } = "";
         public List<DayAvailability> Availability { get; set; } = new();
         public List<ServiceData> Services { get; set; } = new();
-        public bool AllowOnlineBookings { get; set; }
-        public bool AllowNewClients { get; set; }
+        public bool AllowOnlineBookings { get; set; } = true;
+        public bool AllowNewClients { get; set; } = true;
         public string MinimumNoticeTime { get; set; } = "12";
-        public string CancellationPolicy { get; set; } = "none";
     }
 
     public class DayAvailability
