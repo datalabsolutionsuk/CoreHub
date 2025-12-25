@@ -44,7 +44,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddHttpContextAccessor();
 
 // Identity
-builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 8;
@@ -81,14 +81,32 @@ builder.Services.AddAuthentication(options =>
 // Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
+    // Super Admin - Full access to everything
+    options.AddPolicy("SuperAdminOnly", policy => 
+        policy.RequireRole("SuperAdmin"));
+    
+    // Admin and above
+    options.AddPolicy("AdminAccess", policy => 
+        policy.RequireRole("SuperAdmin", "Admin"));
+    
     options.AddPolicy("CanViewOwnCases", policy => 
-        policy.RequireRole("Practitioner", "Manager", "Admin"));
+        policy.RequireRole("Practitioner", "Manager", "Admin", "SuperAdmin"));
     options.AddPolicy("CanViewTeamCases", policy => 
-        policy.RequireRole("Manager", "Admin"));
+        policy.RequireRole("Manager", "Admin", "SuperAdmin"));
     options.AddPolicy("CanViewAllCases", policy => 
-        policy.RequireRole("Admin"));
+        policy.RequireRole("Admin", "SuperAdmin"));
     options.AddPolicy("CanConfigureSystem", policy => 
-        policy.RequireRole("Admin"));
+        policy.RequireRole("Admin", "SuperAdmin"));
+    
+    // Super Admin exclusive policies
+    options.AddPolicy("CanManageUsers", policy => 
+        policy.RequireRole("SuperAdmin"));
+    options.AddPolicy("CanManageRoles", policy => 
+        policy.RequireRole("SuperAdmin"));
+    options.AddPolicy("CanDeleteAnything", policy => 
+        policy.RequireRole("SuperAdmin"));
+    options.AddPolicy("CanViewAuditLogs", policy => 
+        policy.RequireRole("SuperAdmin"));
 });
 
 // MediatR
@@ -186,6 +204,22 @@ app.MapRazorComponents<CoreHub.Web.Components.App>()
     .AddInteractiveServerRenderMode();
 
 app.MapHealthChecks("/health");
+
+// Initialize database and seed Super Admin
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        await ApplicationDbContextSeed.InitializeAsync(context, services);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
 
 // Hangfire Dashboard (skip in test environments)
 if (app.Configuration.GetValue<bool>("Hangfire:Enabled", true))
