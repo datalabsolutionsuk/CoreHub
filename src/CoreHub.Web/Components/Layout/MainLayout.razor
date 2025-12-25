@@ -5,9 +5,18 @@
 @code {
     protected override void OnInitialized()
     {
-        // Redirect to setup if not completed and not already on setup page
+        // Redirect to setup only if:
+        // 1. Setup is not completed AND
+        // 2. User has a valid setup token AND
+        // 3. Not already on setup, signup, login, or landing page
         var currentUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
-        if (!SetupService.IsSetupCompleted && !currentUrl.StartsWith("setup") && !currentUrl.StartsWith("signup") && currentUrl != "" && !currentUrl.StartsWith("login"))
+        
+        if (!SetupService.IsSetupCompleted && 
+            SetupService.HasValidToken && 
+            !currentUrl.StartsWith("setup") && 
+            !currentUrl.StartsWith("signup") && 
+            currentUrl != "" && 
+            !currentUrl.StartsWith("login"))
         {
             Navigation.NavigateTo("/setup", forceLoad: true);
         }

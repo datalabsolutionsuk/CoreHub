@@ -1,5 +1,6 @@
 @page "/signup"
 @inject NavigationManager Navigation
+@inject Services.SetupService SetupService
 @layout PublicLayout
 @rendermode @(new InteractiveServerRenderMode())
 
@@ -353,7 +354,11 @@
         await Task.Delay(500); // Simulate API call
 
         // TODO: Create user account in database
-        // For now, just redirect to setup page
+        
+        // Generate unique setup token for this registration
+        var token = SetupService.GenerateSetupToken();
+        
+        // Redirect to setup page (token is validated on setup page)
         Navigation.NavigateTo("/setup");
     }
 }

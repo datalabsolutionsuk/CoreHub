@@ -2,6 +2,7 @@
 @inject NavigationManager Navigation
 @inject Services.SetupService SetupService
 @rendermode @(new InteractiveServerRenderMode())
+@implements IDisposable
 
 <div class="setup-overlay">
     <div class="setup-wizard">
@@ -1045,6 +1046,14 @@
 
     protected override void OnInitialized()
     {
+        // CRITICAL SECURITY: Validate setup token before allowing access
+        if (!SetupService.HasValidToken)
+        {
+            // No valid token - redirect to signup
+            Navigation.NavigateTo("/signup", forceLoad: true);
+            return;
+        }
+
         setupData.Availability = new List<DayAvailability>
         {
             new() { Day = "Monday", IsAvailable = true },
@@ -1060,6 +1069,15 @@
         {
             new() { Name = "", Duration = 60, Price = 0 }
         };
+    }
+    
+    // Invalidate token if user navigates away (browser back button, etc.)
+    public void Dispose()
+    {
+        if (!SetupService.IsSetupCompleted)
+        {
+            SetupService.InvalidateToken();
+        }
     }
 
     private void NextStep()
