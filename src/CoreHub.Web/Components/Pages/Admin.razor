@@ -61,13 +61,56 @@
         </div>
     </div>
 
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" @bind="searchQuery" @bind:event="oninput" placeholder="Search by name or email..." />
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="roleFilter">
+                        <option value="">All Roles</option>
+                        @foreach (var role in roles)
+                        {
+                            <option value="@role.Name">@role.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-primary w-100" @onclick="ClearFilters">
+                        <i class="fas fa-times me-1"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Users Table -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-users me-2"></i>All Users</h5>
-            <button class="btn btn-primary btn-sm" @onclick="ShowAddUserModal">
-                <i class="fas fa-plus me-1"></i> Add User
-            </button>
+            <h5 class="mb-0"><i class="fas fa-users me-2"></i>All Users (@filteredUsers.Count)</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" @onclick="ExportToCSV">
+                    <i class="fas fa-file-csv me-1"></i> CSV
+                </button>
+                <button class="btn btn-outline-primary btn-sm" @onclick="ExportToExcel">
+                    <i class="fas fa-file-excel me-1"></i> Excel
+                </button>
+                <button class="btn btn-outline-primary btn-sm" @onclick="ExportToPDF">
+                    <i class="fas fa-file-pdf me-1"></i> PDF
+                </button>
+                <button class="btn btn-primary btn-sm" @onclick="ShowAddUserModal">
+                    <i class="fas fa-plus me-1"></i> Add User
+                </button>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -84,7 +127,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var (user, index) in users.Select((u, i) => (u, i + 1)))
+                        @foreach (var (user, index) in paginatedUsers.Select((u, i) => (u, ((currentUserPage - 1) * usersPerPage) + i + 1)))
                         {
                             <tr>
                                 <td>@index</td>
@@ -115,6 +158,33 @@
                     </tbody>
                 </table>
             </div>
+            @if (totalUserPages > 1)
+            {
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            Showing @Math.Min((currentUserPage - 1) * usersPerPage + 1, filteredUsers.Count) to @Math.Min(currentUserPage * usersPerPage, filteredUsers.Count) of @filteredUsers.Count users
+                        </div>
+                        <nav>
+                            <ul class="pagination mb-0">
+                                <li class="page-item @(currentUserPage == 1 ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => ChangeUserPage(currentUserPage - 1)">Previous</button>
+                                </li>
+                                @for (int i = 1; i <= totalUserPages; i++)
+                                {
+                                    var page = i;
+                                    <li class="page-item @(currentUserPage == page ? "active" : "")">
+                                        <button class="page-link" @onclick="() => ChangeUserPage(page)">@page</button>
+                                    </li>
+                                }
+                                <li class="page-item @(currentUserPage == totalUserPages ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => ChangeUserPage(currentUserPage + 1)">Next</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 
@@ -370,6 +440,18 @@
     private List<UserDto> users = new();
     private List<RoleDto> roles = new();
 
+    // Pagination
+    private int currentUserPage = 1;
+    private const int usersPerPage = 4;
+    private List<UserDto> filteredUsers => FilterUsers();
+    private List<UserDto> paginatedUsers => filteredUsers.Skip((currentUserPage - 1) * usersPerPage).Take(usersPerPage).ToList();
+    private int totalUserPages => (int)Math.Ceiling(filteredUsers.Count / (double)usersPerPage);
+
+    // Search and Filters
+    private string searchQuery = "";
+    private string roleFilter = "";
+    private string statusFilter = "";
+
     // Modal states
     private bool showUserModal = false;
     private bool showRoleModal = false;
@@ -558,6 +640,68 @@
     {
         deleteAction?.Invoke();
         CloseDeleteModal();
+    }
+
+    // Pagination
+    private void ChangeUserPage(int page)
+    {
+        if (page >= 1 && page <= totalUserPages)
+        {
+            currentUserPage = page;
+        }
+    }
+
+    // Filter and Search
+    private List<UserDto> FilterUsers()
+    {
+        var filtered = users.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filtered = filtered.Where(u => 
+                u.Email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                u.UserName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(roleFilter))
+        {
+            filtered = filtered.Where(u => u.Roles.Contains(roleFilter));
+        }
+
+        if (!string.IsNullOrWhiteSpace(statusFilter))
+        {
+            filtered = filtered.Where(u => 
+                statusFilter == "active" ? u.IsActive : !u.IsActive);
+        }
+
+        return filtered.ToList();
+    }
+
+    private void ClearFilters()
+    {
+        searchQuery = "";
+        roleFilter = "";
+        statusFilter = "";
+        currentUserPage = 1;
+    }
+
+    // Export Functions
+    private void ExportToCSV()
+    {
+        // Placeholder for CSV export
+        Console.WriteLine("Exporting to CSV...");
+    }
+
+    private void ExportToExcel()
+    {
+        // Placeholder for Excel export
+        Console.WriteLine("Exporting to Excel...");
+    }
+
+    private void ExportToPDF()
+    {
+        // Placeholder for PDF export
+        Console.WriteLine("Exporting to PDF...");
     }
 
     public class UserDto
