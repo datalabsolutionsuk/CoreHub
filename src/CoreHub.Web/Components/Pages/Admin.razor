@@ -1,0 +1,310 @@
+@page "/admin"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<Infrastructure.Identity.ApplicationUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@rendermode @(new InteractiveServerRenderMode())
+
+<PageTitle>Super Admin - CoreHub</PageTitle>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1><i class="fas fa-user-shield me-2"></i>Super Admin Dashboard</h1>
+        <p class="text-muted">Full system access and control</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@totalUsers</h3>
+                    <p>Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@adminCount</h3>
+                    <p>Administrators</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@activeUsers</h3>
+                    <p>Active Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-danger">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@totalRoles</h3>
+                    <p>Total Roles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-users me-2"></i>All Users</h5>
+            <button class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Add User
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Email</th>
+                            <th>Username</th>
+                            <th>Roles</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (user, index) in users.Select((u, i) => (u, i + 1)))
+                        {
+                            <tr>
+                                <td>@index</td>
+                                <td>@user.Email</td>
+                                <td>@user.UserName</td>
+                                <td>
+                                    @foreach (var role in user.Roles)
+                                    {
+                                        <span class="badge bg-primary me-1">@role</span>
+                                    }
+                                </td>
+                                <td>@user.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    <span class="badge @(user.IsActive ? "bg-success" : "bg-secondary")">
+                                        @(user.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-1" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roles Section -->
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>System Roles</h5>
+            <button class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Add Role
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                @foreach (var role in roles)
+                {
+                    <div class="col-md-4">
+                        <div class="role-card">
+                            <h6>@role.Name</h6>
+                            <p class="text-muted small">@role.UserCount users</p>
+                            <div class="role-actions">
+                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        padding: 30px;
+    }
+
+    .admin-header {
+        margin-bottom: 30px;
+    }
+
+    .admin-header h1 {
+        font-size: 32px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+    }
+
+    .stat-content h3 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .stat-content p {
+        color: #7f8c8d;
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        background: white;
+        border-bottom: 1px solid #e9ecef;
+        padding: 20px;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        border-bottom: 2px solid #e9ecef;
+        color: #2c3e50;
+        font-weight: 600;
+        padding: 15px;
+    }
+
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+    }
+
+    .role-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        border-left: 4px solid #667eea;
+    }
+
+    .role-card h6 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .role-actions {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+    }
+</style>
+
+@code {
+    private int totalUsers = 15;
+    private int adminCount = 3;
+    private int activeUsers = 12;
+    private int totalRoles = 5;
+
+    private List<UserDto> users = new();
+    private List<RoleDto> roles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        // Dummy data for now
+        users = new List<UserDto>
+        {
+            new() { Email = "admin@corehub.com", UserName = "admin", Roles = new List<string> { "SuperAdmin", "Admin" }, CreatedAt = DateTime.Now.AddDays(-365), IsActive = true },
+            new() { Email = "john.doe@corehub.com", UserName = "john.doe", Roles = new List<string> { "Manager" }, CreatedAt = DateTime.Now.AddDays(-180), IsActive = true },
+            new() { Email = "jane.smith@corehub.com", UserName = "jane.smith", Roles = new List<string> { "Practitioner" }, CreatedAt = DateTime.Now.AddDays(-90), IsActive = true },
+            new() { Email = "bob.wilson@corehub.com", UserName = "bob.wilson", Roles = new List<string> { "Practitioner" }, CreatedAt = DateTime.Now.AddDays(-60), IsActive = true },
+            new() { Email = "alice.johnson@corehub.com", UserName = "alice.johnson", Roles = new List<string> { "User" }, CreatedAt = DateTime.Now.AddDays(-30), IsActive = true },
+            new() { Email = "charlie.brown@corehub.com", UserName = "charlie.brown", Roles = new List<string> { "Manager" }, CreatedAt = DateTime.Now.AddDays(-120), IsActive = true },
+            new() { Email = "diana.prince@corehub.com", UserName = "diana.prince", Roles = new List<string> { "Admin" }, CreatedAt = DateTime.Now.AddDays(-200), IsActive = true },
+            new() { Email = "peter.parker@corehub.com", UserName = "peter.parker", Roles = new List<string> { "Practitioner" }, CreatedAt = DateTime.Now.AddDays(-45), IsActive = false },
+            new() { Email = "tony.stark@corehub.com", UserName = "tony.stark", Roles = new List<string> { "Admin" }, CreatedAt = DateTime.Now.AddDays(-300), IsActive = true },
+            new() { Email = "bruce.wayne@corehub.com", UserName = "bruce.wayne", Roles = new List<string> { "Practitioner" }, CreatedAt = DateTime.Now.AddDays(-75), IsActive = true },
+            new() { Email = "clark.kent@corehub.com", UserName = "clark.kent", Roles = new List<string> { "Manager" }, CreatedAt = DateTime.Now.AddDays(-150), IsActive = true },
+            new() { Email = "barry.allen@corehub.com", UserName = "barry.allen", Roles = new List<string> { "User" }, CreatedAt = DateTime.Now.AddDays(-20), IsActive = true },
+            new() { Email = "hal.jordan@corehub.com", UserName = "hal.jordan", Roles = new List<string> { "Practitioner" }, CreatedAt = DateTime.Now.AddDays(-100), IsActive = false },
+            new() { Email = "arthur.curry@corehub.com", UserName = "arthur.curry", Roles = new List<string> { "User" }, CreatedAt = DateTime.Now.AddDays(-15), IsActive = true },
+            new() { Email = "oliver.queen@corehub.com", UserName = "oliver.queen", Roles = new List<string> { "Practitioner" }, CreatedAt = DateTime.Now.AddDays(-80), IsActive = true }
+        };
+
+        roles = new List<RoleDto>
+        {
+            new() { Name = "SuperAdmin", UserCount = 1 },
+            new() { Name = "Admin", UserCount = 3 },
+            new() { Name = "Manager", UserCount = 3 },
+            new() { Name = "Practitioner", UserCount = 6 },
+            new() { Name = "User", UserCount = 2 }
+        };
+
+        await Task.CompletedTask;
+    }
+
+    public class UserDto
+    {
+        public string Email { get; set; } = "";
+        public string UserName { get; set; } = "";
+        public List<string> Roles { get; set; } = new();
+        public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class RoleDto
+    {
+        public string Name { get; set; } = "";
+        public int UserCount { get; set; }
+    }
+}
