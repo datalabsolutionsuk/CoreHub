@@ -1,0 +1,917 @@
+@page "/setup"
+@inject NavigationManager Navigation
+@rendermode @(new InteractiveServerRenderMode())
+
+<div class="setup-wizard">
+    <div class="setup-container">
+        <!-- Progress Indicator -->
+        <div class="setup-progress">
+            @for (int i = 1; i <= totalSteps; i++)
+            {
+                <div class="progress-step @(i < currentStep ? "completed" : "") @(i == currentStep ? "active" : "")">
+                    @if (i < currentStep)
+                    {
+                        <i class="fas fa-check"></i>
+                    }
+                </div>
+                @if (i < totalSteps)
+                {
+                    <div class="progress-line @(i < currentStep ? "completed" : "")"></div>
+                }
+            }
+        </div>
+
+        <!-- Step Content -->
+        <div class="setup-content">
+            @if (currentStep == 1)
+            {
+                <div class="step-header">
+                    <h2>Hi and welcome aboard!</h2>
+                    <p>Let's get your practice set up in CoreHub</p>
+                </div>
+                <div class="welcome-card">
+                    <div class="welcome-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>Are you ready to dive into CoreHub?</h3>
+                    <p>Your practice management success awaits.</p>
+                </div>
+            }
+            else if (currentStep == 2)
+            {
+                <div class="step-header">
+                    <h2>What type of practice do you run?</h2>
+                    <p>This helps us customize your experience</p>
+                </div>
+                <div class="practice-types">
+                    @foreach (var type in practiceTypes)
+                    {
+                        <div class="practice-type-card @(setupData.PracticeType == type ? "selected" : "")" 
+                             @onclick="() => setupData.PracticeType = type">
+                            <i class="fas @GetPracticeTypeIcon(type)"></i>
+                            <span>@type</span>
+                        </div>
+                    }
+                </div>
+            }
+            else if (currentStep == 3)
+            {
+                <div class="step-header">
+                    <h2>Add your practice details</h2>
+                    <p>This makes it easier for you to create automated communications for clients and referrers.</p>
+                </div>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label>Practice Name</label>
+                        <input type="text" class="form-control" @bind="setupData.PracticeName" placeholder="Enter practice name" />
+                    </div>
+                    <div class="form-group">
+                        <label>Street Address</label>
+                        <input type="text" class="form-control" @bind="setupData.StreetAddress" placeholder="Enter street address" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" class="form-control" @bind="setupData.City" placeholder="City" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Postcode</label>
+                                <input type="text" class="form-control" @bind="setupData.Postcode" placeholder="Postcode" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="defaultLocation" @bind="setupData.UseAsDefaultLocation" />
+                        <label class="form-check-label" for="defaultLocation">Use this address as your default location</label>
+                    </div>
+                </div>
+            }
+            else if (currentStep == 4)
+            {
+                <div class="step-header">
+                    <h2>Business Phone Number</h2>
+                    <p>What phone number do clients use to contact you?</p>
+                </div>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" class="form-control" @bind="setupData.PhoneNumber" placeholder="Enter phone number" />
+                    </div>
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Don't worry- we don't have a sales team so we won't be chasing you down.</p>
+                    </div>
+                </div>
+            }
+            else if (currentStep == 5)
+            {
+                <div class="step-header">
+                    <h2>Check your practitioner name</h2>
+                    <p>We created your practitioner profile. Update how your name appears.</p>
+                </div>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label>Name in CoreHub</label>
+                        <input type="text" class="form-control" @bind="setupData.PractitionerDisplayName" placeholder="Display name" />
+                    </div>
+                    <div class="form-group">
+                        <label>Name on invoices and official documents</label>
+                        <input type="text" class="form-control" @bind="setupData.PractitionerOfficialName" placeholder="Official name" />
+                    </div>
+                </div>
+            }
+            else if (currentStep == 6)
+            {
+                <div class="step-header">
+                    <h2>Set Your Availability</h2>
+                    <p>Set the days and times you'd like your calendar to be open for bookings. You can add overrides and personal appointments later.</p>
+                </div>
+                <div class="availability-section">
+                    @foreach (var day in setupData.Availability)
+                    {
+                        <div class="availability-row">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="@day.Day" @bind="day.IsAvailable" />
+                                <label class="form-check-label day-label" for="@day.Day">@day.Day.ToUpper()</label>
+                            </div>
+                            @if (day.IsAvailable)
+                            {
+                                <div class="time-inputs">
+                                    <select class="form-select" @bind="day.StartTime">
+                                        @for (int h = 6; h <= 20; h++)
+                                        {
+                                            <option value="@h:00">@h:00</option>
+                                            <option value="@h:30">@h:30</option>
+                                        }
+                                    </select>
+                                    <span>–</span>
+                                    <select class="form-select" @bind="day.EndTime">
+                                        @for (int h = 6; h <= 21; h++)
+                                        {
+                                            <option value="@h:00">@h:00</option>
+                                            <option value="@h:30">@h:30</option>
+                                        }
+                                    </select>
+                                    <button class="btn btn-link text-danger" @onclick="() => day.IsAvailable = false">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Unavailable</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (currentStep == 7)
+            {
+                <div class="step-header">
+                    <h2>Add some services</h2>
+                    <p>These will make it faster for you to create appointments.</p>
+                </div>
+                <div class="services-section">
+                    <div class="services-header">
+                        <div>Service</div>
+                        <div>Duration (minutes)</div>
+                        <div>Price</div>
+                        <div></div>
+                    </div>
+                    @foreach (var service in setupData.Services)
+                    {
+                        <div class="service-row">
+                            <input type="text" class="form-control" @bind="service.Name" placeholder="Service name" />
+                            <input type="number" class="form-control" @bind="service.Duration" placeholder="60" />
+                            <div class="price-input">
+                                <span class="currency">£</span>
+                                <input type="number" class="form-control" @bind="service.Price" placeholder="0.00" step="0.01" />
+                            </div>
+                            <button class="btn btn-link text-danger" @onclick="() => RemoveService(service)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    }
+                    <button class="btn btn-link" @onclick="AddService">
+                        <i class="fas fa-plus"></i> Add Service
+                    </button>
+                </div>
+            }
+            else if (currentStep == 8)
+            {
+                <div class="step-header">
+                    <h2>Get ready for online bookings</h2>
+                    <p>Do you want your clients to be able to book online?</p>
+                </div>
+                <div class="options-section">
+                    <div class="option-card @(setupData.AllowOnlineBookings ? "selected" : "")" 
+                         @onclick="() => setupData.AllowOnlineBookings = true">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Yes</span>
+                    </div>
+                    <div class="option-card @(!setupData.AllowOnlineBookings ? "selected" : "")" 
+                         @onclick="() => setupData.AllowOnlineBookings = false">
+                        <i class="fas fa-times-circle"></i>
+                        <span>No</span>
+                    </div>
+                </div>
+            }
+            else if (currentStep == 9)
+            {
+                <div class="step-header">
+                    <h2>Decide who can book online</h2>
+                    <p>Do you want to allow new clients to book appointments online?</p>
+                </div>
+                <div class="options-section">
+                    <div class="option-card @(setupData.AllowNewClients ? "selected" : "")" 
+                         @onclick="() => setupData.AllowNewClients = true">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Yes</span>
+                    </div>
+                    <div class="option-card @(!setupData.AllowNewClients ? "selected" : "")" 
+                         @onclick="() => setupData.AllowNewClients = false">
+                        <i class="fas fa-times-circle"></i>
+                        <span>No</span>
+                    </div>
+                </div>
+            }
+            else if (currentStep == 10)
+            {
+                <div class="step-header">
+                    <h2>Set your notice time</h2>
+                    <p>How much notice time do you need for online bookings?</p>
+                </div>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label>Minimum notice time</label>
+                        <select class="form-select" @bind="setupData.MinimumNoticeTime">
+                            <option value="1">1 hour ahead</option>
+                            <option value="2">2 hours ahead</option>
+                            <option value="3">3 hours ahead</option>
+                            <option value="6">6 hours ahead</option>
+                            <option value="12">12 hours ahead</option>
+                            <option value="24">24 hours ahead</option>
+                            <option value="48">2 days ahead</option>
+                            <option value="72">3 days ahead</option>
+                        </select>
+                    </div>
+                </div>
+            }
+            else if (currentStep == 11)
+            {
+                <div class="step-header">
+                    <h2>Choose how to handle cancellations</h2>
+                    <p>What is your cancellation policy?</p>
+                </div>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label>Cancellation Policy</label>
+                        <select class="form-select" @bind="setupData.CancellationPolicy">
+                            <option value="none">No Cancellations Via Portal</option>
+                            <option value="anytime">Anytime</option>
+                            <option value="3">3 Hours Before Appointment</option>
+                            <option value="6">6 Hours Before Appointment</option>
+                            <option value="8">8 Hours Before Appointment</option>
+                            <option value="12">12 Hours Before Appointment</option>
+                            <option value="24">One Day Before Appointment</option>
+                            <option value="48">Two Days Before Appointment</option>
+                            <option value="72">Three Days Before Appointment</option>
+                            <option value="96">Four Days Before Appointment</option>
+                            <option value="168">One Week Before Appointment</option>
+                        </select>
+                    </div>
+                </div>
+            }
+            else if (currentStep == 12)
+            {
+                <div class="step-header">
+                    <h2>Check out your Online Portal!</h2>
+                    <p>Great! Your Online Portal is ready to accept bookings.</p>
+                </div>
+                <div class="portal-info">
+                    <div class="portal-card">
+                        <h4>View your Client Portal</h4>
+                        <a href="#" class="portal-link">https://clientportal.corehub.com/clientportal/@GeneratePortalId()</a>
+                        <p class="text-muted">You can update the URL later.</p>
+                    </div>
+                </div>
+            }
+            else if (currentStep == 13)
+            {
+                <div class="step-header">
+                    <h2>Well done!</h2>
+                    <p>Your initial setup is complete. You can learn about more CoreHub features here...</p>
+                </div>
+                <div class="resources-grid">
+                    <div class="resource-card blue">
+                        <h4>Getting started with CoreHub</h4>
+                        <div class="resource-links">
+                            <a href="#">Video Guide</a>
+                            <a href="#">Help Article</a>
+                        </div>
+                    </div>
+                    <div class="resource-card purple">
+                        <h4>Complete your CoreHub Account Setup</h4>
+                        <div class="resource-links">
+                            <a href="#">Video Guide</a>
+                            <a href="#">Help Article</a>
+                        </div>
+                    </div>
+                    <div class="resource-card pink">
+                        <h4>Set up Reminders & Automatic Communications</h4>
+                        <div class="resource-links">
+                            <a href="#">Video Guide</a>
+                            <a href="#">Help Article</a>
+                        </div>
+                    </div>
+                    <div class="resource-card gray">
+                        <h4>Add Session Notes</h4>
+                        <div class="resource-links">
+                            <a href="#">Video Guide</a>
+                            <a href="#">Help Article</a>
+                        </div>
+                    </div>
+                    <div class="resource-card orange">
+                        <h4>Add Services and Products</h4>
+                        <div class="resource-links">
+                            <a href="#">Video Guide</a>
+                            <a href="#">Help Article</a>
+                        </div>
+                    </div>
+                    <div class="resource-card green">
+                        <h4>Start with Online Forms</h4>
+                        <div class="resource-links">
+                            <a href="#">Video Guide</a>
+                            <a href="#">Help Article</a>
+                        </div>
+                    </div>
+                    <div class="resource-card blue-light">
+                        <h4>Start with Communication Templates</h4>
+                        <div class="resource-links">
+                            <a href="#">Video Guide</a>
+                            <a href="#">Help Article</a>
+                        </div>
+                    </div>
+                    <div class="resource-card purple-light">
+                        <h4>Set up your Client Portal</h4>
+                        <div class="resource-links">
+                            <a href="#">Video Guide</a>
+                            <a href="#">Help Article</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="setup-actions">
+            @if (currentStep > 1 && currentStep < 13)
+            {
+                <button class="btn btn-outline-primary" @onclick="GoBack">
+                    <i class="fas fa-arrow-left"></i> BACK
+                </button>
+            }
+            else
+            {
+                <div></div>
+            }
+
+            <div class="right-actions">
+                @if (currentStep > 1 && currentStep < 12)
+                {
+                    <button class="btn btn-link skip-btn" @onclick="SkipStep">SKIP FOR NOW</button>
+                }
+                @if (currentStep < 13)
+                {
+                    <button class="btn btn-primary next-btn" @onclick="GoNext">
+                        NEXT <i class="fas fa-arrow-right"></i>
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-primary next-btn" @onclick="CompleteSetup">
+                        DONE <i class="fas fa-check"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.setup-wizard {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.setup-container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    max-width: 900px;
+    width: 100%;
+    padding: 3rem;
+}
+
+.setup-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3rem;
+}
+
+.progress-step {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.progress-step.active {
+    background: #667eea;
+    color: white;
+    transform: scale(1.2);
+}
+
+.progress-step.completed {
+    background: #667eea;
+    color: white;
+}
+
+.progress-line {
+    width: 40px;
+    height: 2px;
+    background: #e9ecef;
+    transition: all 0.3s;
+}
+
+.progress-line.completed {
+    background: #667eea;
+}
+
+.setup-content {
+    min-height: 400px;
+    margin-bottom: 2rem;
+}
+
+.step-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.step-header h2 {
+    font-size: 28px;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.step-header p {
+    color: #718096;
+    font-size: 16px;
+}
+
+.welcome-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 3rem;
+    text-align: center;
+    color: white;
+}
+
+.welcome-icon {
+    font-size: 64px;
+    margin-bottom: 1rem;
+}
+
+.welcome-card h3 {
+    font-size: 24px;
+    margin-bottom: 1rem;
+}
+
+.practice-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.practice-type-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.practice-type-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+}
+
+.practice-type-card.selected {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.practice-type-card i {
+    font-size: 32px;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-section {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.info-box {
+    background: #f0f4ff;
+    border-left: 4px solid #667eea;
+    padding: 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: start;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.info-box i {
+    color: #667eea;
+    font-size: 20px;
+    margin-top: 2px;
+}
+
+.availability-section {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.availability-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.day-label {
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.time-inputs select {
+    width: 130px;
+}
+
+.services-section {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.services-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 40px;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 1rem;
+}
+
+.service-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 40px;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.price-input {
+    position: relative;
+}
+
+.price-input .currency {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+.price-input input {
+    padding-left: 28px;
+}
+
+.options-section {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.option-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 2rem 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 150px;
+}
+
+.option-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+}
+
+.option-card.selected {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.option-card i {
+    font-size: 48px;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.option-card span {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.portal-info {
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.portal-card {
+    background: #f0f4ff;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.portal-card h4 {
+    color: #2d3748;
+    margin-bottom: 1rem;
+}
+
+.portal-link {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 16px;
+    word-break: break-all;
+    text-decoration: none;
+}
+
+.portal-link:hover {
+    text-decoration: underline;
+}
+
+.resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.resource-card {
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    transition: transform 0.3s;
+}
+
+.resource-card:hover {
+    transform: translateY(-4px);
+}
+
+.resource-card h4 {
+    font-size: 16px;
+    margin-bottom: 1rem;
+    min-height: 48px;
+}
+
+.resource-card.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.resource-card.purple { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); }
+.resource-card.pink { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.resource-card.gray { background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%); }
+.resource-card.orange { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+.resource-card.green { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+.resource-card.blue-light { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #2d3748; }
+.resource-card.purple-light { background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); color: #2d3748; }
+
+.resource-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.resource-links a {
+    color: inherit;
+    text-decoration: underline;
+    font-size: 14px;
+}
+
+.setup-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.right-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.skip-btn {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.next-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.next-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+</style>
+
+@code {
+    private int currentStep = 1;
+    private int totalSteps = 13;
+
+    private SetupData setupData = new SetupData
+    {
+        PractitionerDisplayName = "Admin User",
+        Availability = new List<DayAvailability>
+        {
+            new DayAvailability { Day = "mon", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
+            new DayAvailability { Day = "tue", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
+            new DayAvailability { Day = "wed", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
+            new DayAvailability { Day = "thu", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
+            new DayAvailability { Day = "fri", IsAvailable = true, StartTime = "09:00", EndTime = "17:00" },
+            new DayAvailability { Day = "sat", IsAvailable = false },
+            new DayAvailability { Day = "sun", IsAvailable = false }
+        },
+        Services = new List<ServiceData>
+        {
+            new ServiceData { Name = "Initial Consultation", Duration = 60, Price = 120.00m },
+            new ServiceData { Name = "Standard Consultation", Duration = 60, Price = 170.00m }
+        },
+        AllowOnlineBookings = true,
+        AllowNewClients = true,
+        MinimumNoticeTime = "12",
+        CancellationPolicy = "none"
+    };
+
+    private List<string> practiceTypes = new List<string>
+    {
+        "Psychology", "Physiotherapy", "Podiatry", "Speech Pathology",
+        "Chiropractic", "Osteopathy", "Massage Therapy", "Multidisciplinary",
+        "Naturopathy", "Nutrition", "Occupational Therapy", "Other Health Care",
+        "Other Services", "Personal Training", "Social Work", "Acupuncture & Chinese Medicine",
+        "Beauty Aesthetics", "Counselling", "Dietetics", "General Practice"
+    };
+
+    private void GoNext()
+    {
+        if (currentStep < totalSteps)
+        {
+            currentStep++;
+        }
+    }
+
+    private void GoBack()
+    {
+        if (currentStep > 1)
+        {
+            currentStep--;
+        }
+    }
+
+    private void SkipStep()
+    {
+        GoNext();
+    }
+
+    private void CompleteSetup()
+    {
+        // Save setup data to database here
+        Navigation.NavigateTo("/dashboard");
+    }
+
+    private void AddService()
+    {
+        setupData.Services.Add(new ServiceData { Duration = 60, Price = 0 });
+    }
+
+    private void RemoveService(ServiceData service)
+    {
+        if (setupData.Services.Count > 1)
+        {
+            setupData.Services.Remove(service);
+        }
+    }
+
+    private string GetPracticeTypeIcon(string type)
+    {
+        return type switch
+        {
+            "Psychology" => "fa-brain",
+            "Physiotherapy" => "fa-walking",
+            "Podiatry" => "fa-shoe-prints",
+            "Speech Pathology" => "fa-comments",
+            "Chiropractic" => "fa-spine",
+            "Osteopathy" => "fa-bone",
+            "Massage Therapy" => "fa-hands",
+            "Nutrition" => "fa-apple-alt",
+            "Counselling" => "fa-user-friends",
+            "General Practice" => "fa-stethoscope",
+            _ => "fa-heartbeat"
+        };
+    }
+
+    private string GeneratePortalId()
+    {
+        return setupData.PracticeName?.ToLower().Replace(" ", "") ?? "practice" + new Random().Next(100, 999);
+    }
+
+    public class SetupData
+    {
+        public string PracticeType { get; set; } = "";
+        public string PracticeName { get; set; } = "";
+        public string StreetAddress { get; set; } = "";
+        public string City { get; set; } = "";
+        public string Postcode { get; set; } = "";
+        public bool UseAsDefaultLocation { get; set; }
+        public string PhoneNumber { get; set; } = "";
+        public string PractitionerDisplayName { get; set; } = "";
+        public string PractitionerOfficialName { get; set; } = "";
+        public List<DayAvailability> Availability { get; set; } = new();
+        public List<ServiceData> Services { get; set; } = new();
+        public bool AllowOnlineBookings { get; set; }
+        public bool AllowNewClients { get; set; }
+        public string MinimumNoticeTime { get; set; } = "12";
+        public string CancellationPolicy { get; set; } = "none";
+    }
+
+    public class DayAvailability
+    {
+        public string Day { get; set; } = "";
+        public bool IsAvailable { get; set; }
+        public string StartTime { get; set; } = "09:00";
+        public string EndTime { get; set; } = "17:00";
+    }
+
+    public class ServiceData
+    {
+        public string Name { get; set; } = "";
+        public int Duration { get; set; }
+        public decimal Price { get; set; }
+    }
+}

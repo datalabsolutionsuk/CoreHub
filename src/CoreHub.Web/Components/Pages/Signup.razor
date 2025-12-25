@@ -1,0 +1,360 @@
+@page "/signup"
+@inject NavigationManager Navigation
+@layout PublicLayout
+@rendermode @(new InteractiveServerRenderMode())
+
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h2>Create Your Account</h2>
+                <p>Start managing your practice today</p>
+            </div>
+
+            <form @onsubmit="HandleSignup" class="auth-form">
+                <div class="form-group">
+                    <label for="practiceName">Practice Name</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="practiceName" 
+                           @bind="practiceName" 
+                           placeholder="Enter your practice name" 
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="fullName" 
+                           @bind="fullName" 
+                           placeholder="Enter your full name" 
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" 
+                           class="form-control" 
+                           id="email" 
+                           @bind="email" 
+                           placeholder="Enter your email" 
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" 
+                           class="form-control" 
+                           id="password" 
+                           @bind="password" 
+                           placeholder="Create a password" 
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" 
+                           class="form-control" 
+                           id="confirmPassword" 
+                           @bind="confirmPassword" 
+                           placeholder="Confirm your password" 
+                           required />
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> @errorMessage
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-primary btn-lg w-100" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>Creating Account...</span>
+                    }
+                    else
+                    {
+                        <span>Create Account</span>
+                    }
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a href="/login">Sign in</a></p>
+            </div>
+        </div>
+
+        <div class="auth-benefits">
+            <h3>Why Choose CoreHub?</h3>
+            <div class="benefit">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <h4>Easy Setup</h4>
+                    <p>Get started in minutes with our guided setup wizard</p>
+                </div>
+            </div>
+            <div class="benefit">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <h4>All-in-One Platform</h4>
+                    <p>Manage clients, appointments, and flags in one place</p>
+                </div>
+            </div>
+            <div class="benefit">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <h4>Secure & Reliable</h4>
+                    <p>Your data is encrypted and backed up automatically</p>
+                </div>
+            </div>
+            <div class="benefit">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <h4>Free Trial</h4>
+                    <p>No credit card required to get started</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-container {
+    max-width: 1100px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header h2 {
+    font-size: 28px;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    color: #718096;
+    font-size: 16px;
+}
+
+.auth-form {
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 0.875rem 2rem;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.alert-danger {
+    background: #fee;
+    color: #c53030;
+    border: 1px solid #fc8181;
+}
+
+.auth-footer {
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.auth-footer a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+.auth-benefits {
+    color: white;
+    padding: 2rem 0;
+}
+
+.auth-benefits h3 {
+    font-size: 24px;
+    margin-bottom: 2rem;
+}
+
+.benefit {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+}
+
+.benefit i {
+    font-size: 24px;
+    color: #48bb78;
+    margin-top: 0.25rem;
+}
+
+.benefit h4 {
+    font-size: 18px;
+    margin-bottom: 0.25rem;
+}
+
+.benefit p {
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+    margin: 0;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15rem;
+}
+</style>
+
+@@media (max-width: 768px) {
+    .auth-container {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-benefits {
+        display: none;
+    }
+
+    .auth-card {
+        padding: 2rem;
+    }
+}
+
+
+@code {
+    private string practiceName = "";
+    private string fullName = "";
+    private string email = "";
+    private string password = "";
+    private string confirmPassword = "";
+    private string errorMessage = "";
+    private bool isLoading = false;
+
+    private async Task HandleSignup()
+    {
+        errorMessage = "";
+        
+        // Validation
+        if (string.IsNullOrWhiteSpace(practiceName))
+        {
+            errorMessage = "Practice name is required";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            errorMessage = "Full name is required";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            errorMessage = "Email is required";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Password is required";
+            return;
+        }
+
+        if (password.Length < 6)
+        {
+            errorMessage = "Password must be at least 6 characters";
+            return;
+        }
+
+        if (password != confirmPassword)
+        {
+            errorMessage = "Passwords do not match";
+            return;
+        }
+
+        isLoading = true;
+        await Task.Delay(500); // Simulate API call
+
+        // TODO: Create user account in database
+        // For now, just redirect to setup page
+        Navigation.NavigateTo("/setup");
+    }
+}
