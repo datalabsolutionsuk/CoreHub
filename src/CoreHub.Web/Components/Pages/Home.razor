@@ -8,9 +8,9 @@
 
 <PageTitle>Dashboard - CoreHub</PageTitle>
 
-@if (!SetupService.IsSetupCompleted)
+@if (!isAuthenticated && !SetupService.IsSetupCompleted)
 {
-    <!-- Empty State for New Users -->
+    <!-- Empty State for New Users Only -->
     <div class="empty-state-container">
         <div class="empty-state-content">
             <div class="empty-state-icon">
@@ -820,6 +820,7 @@ else
 </style>
 
 @code {
+    private bool isAuthenticated = false;
     private int activeClients = 0;
     private int openFlags = 0;
     private int todayAppointments = 0;
@@ -842,9 +843,10 @@ else
         // Check if user is authenticated (e.g., admin@corehub.com)
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+        isAuthenticated = user.Identity?.IsAuthenticated == true;
         
-        // If user is logged in, auto-complete setup and show dummy data
-        if (user.Identity?.IsAuthenticated == true)
+        // If user is logged in, auto-complete setup and always show dashboard with data
+        if (isAuthenticated)
         {
             if (!SetupService.IsSetupCompleted)
             {
@@ -857,8 +859,8 @@ else
 
     private async Task LoadDashboardData()
     {
-        // Only load dummy data if setup is completed
-        if (!SetupService.IsSetupCompleted)
+        // Load dummy data for authenticated users OR if setup is completed
+        if (!isAuthenticated && !SetupService.IsSetupCompleted)
         {
             return;
         }

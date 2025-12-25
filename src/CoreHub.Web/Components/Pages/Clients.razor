@@ -8,9 +8,9 @@
 
 <PageTitle>Clients - CoreHub</PageTitle>
 
-@if (!SetupService.IsSetupCompleted)
+@if (!isAuthenticated && !SetupService.IsSetupCompleted)
 {
-    <!-- Empty State for New Users -->
+    <!-- Empty State for New Users Only -->
     <div class="empty-state-container">
         <div class="empty-state-content">
             <div class="empty-state-icon">
@@ -261,15 +261,17 @@ else
     private string searchTerm = "";
     private string statusFilter = "";
     private string flagFilter = "";
+    private bool isAuthenticated = false;
 
     protected override async Task OnInitializedAsync()
     {
         // Check if user is authenticated (e.g., admin@corehub.com)
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+        isAuthenticated = user.Identity?.IsAuthenticated == true;
         
         // If user is logged in, auto-complete setup and show dummy data
-        if (user.Identity?.IsAuthenticated == true)
+        if (isAuthenticated)
         {
             if (!SetupService.IsSetupCompleted)
             {
@@ -282,8 +284,8 @@ else
 
     private async Task LoadClients()
     {
-        // Only load dummy data if setup is completed
-        if (!SetupService.IsSetupCompleted)
+        // Load dummy data for authenticated users OR if setup is completed
+        if (!isAuthenticated && !SetupService.IsSetupCompleted)
         {
             clients = new List<ClientDto>();
             return;
