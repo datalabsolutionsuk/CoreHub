@@ -59,10 +59,28 @@ public static class ApplicationDbContextSeed
 
     public static async Task InitializeAsync(ApplicationDbContext context, IServiceProvider serviceProvider)
     {
-        // Ensure database is created
-        await context.Database.MigrateAsync();
-
-        // Seed roles and super admin
-        await SeedDefaultUserAsync(serviceProvider);
+        try
+        {
+            // Ensure database is created (creates Identity tables too)
+            var created = await context.Database.EnsureCreatedAsync();
+            
+            if (!created)
+            {
+                // Database already exists, just seed
+                await SeedDefaultUserAsync(serviceProvider);
+            }
+            else
+            {
+                // Fresh database, give it a moment then seed
+                await Task.Delay(500);
+                await SeedDefaultUserAsync(serviceProvider);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log but don't crash - admin can be created manually
+            Console.WriteLine($"Database initialization note: {ex.Message}");
+            Console.WriteLine("Super Admin can be created manually if needed.");
+        }
     }
 }
