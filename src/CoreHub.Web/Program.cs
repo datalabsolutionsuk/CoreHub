@@ -184,7 +184,8 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Comment out HTTPS redirection for development
+// app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseSerilogRequestLogging();

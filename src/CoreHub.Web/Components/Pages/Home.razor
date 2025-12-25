@@ -8,24 +8,7 @@
 
 <PageTitle>Dashboard - CoreHub</PageTitle>
 
-@if (!isAuthenticated && !SetupService.IsSetupCompleted)
-{
-    <!-- Empty State for New Users Only -->
-    <div class="empty-state-container">
-        <div class="empty-state-content">
-            <div class="empty-state-icon">
-                <i class="fas fa-clipboard-list"></i>
-            </div>
-            <h2>Welcome to CoreHub!</h2>
-            <p>Let's get started by completing your setup. Click below to configure your practice.</p>
-            <button class="btn btn-primary btn-lg" @onclick="GoToSetup">
-                <i class="fas fa-rocket me-2"></i> Complete Setup
-            </button>
-        </div>
-    </div>
-}
-else
-{
+
 <div class="dashboard-container">
     <div class="dashboard-header">
         <div>
@@ -859,11 +842,6 @@ else
 
     private async Task LoadDashboardData()
     {
-        // Load dummy data for authenticated users OR if setup is completed
-        if (!isAuthenticated && !SetupService.IsSetupCompleted)
-        {
-            return;
-        }
 
         // Dummy metrics
         activeClients = 42;
