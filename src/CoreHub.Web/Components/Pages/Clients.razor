@@ -1,7 +1,9 @@
 @page "/clients"
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Navigation
 @inject Services.SetupService SetupService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode @(new InteractiveServerRenderMode())
 
 <PageTitle>Clients - CoreHub</PageTitle>
@@ -262,6 +264,19 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // Check if user is authenticated (e.g., admin@corehub.com)
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        // If user is logged in, auto-complete setup and show dummy data
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            if (!SetupService.IsSetupCompleted)
+            {
+                SetupService.CompleteSetup();
+            }
+        }
+        
         await LoadClients();
     }
 
@@ -334,9 +349,23 @@ else
         Console.WriteLine("Add Client clicked");
     }
 
-    private void GoToSetup()
+    private async Task GoToSetup()
     {
-        Navigation.NavigateTo("/setup");
+        // Check if user is authenticated
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // User is logged in - generate token and navigate to setup
+            SetupService.GenerateSetupToken();
+            Navigation.NavigateTo("/setup");
+        }
+        else
+        {
+            // User is not logged in - redirect to signup
+            Navigation.NavigateTo("/signup");
+        }
     }
 
     private void ViewClient(Guid id)

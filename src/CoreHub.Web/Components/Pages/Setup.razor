@@ -1,6 +1,7 @@
 @page "/setup"
 @inject NavigationManager Navigation
 @inject Services.SetupService SetupService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode @(new InteractiveServerRenderMode())
 @implements IDisposable
 
@@ -1044,12 +1045,19 @@
         "Acupuncture", "Massage Therapy", "Other"
     };
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // CRITICAL SECURITY: Validate setup token before allowing access
-        if (!SetupService.HasValidToken)
+        // Check if user is authenticated
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        // CRITICAL SECURITY: Allow access if user is authenticated OR has valid token
+        bool isAuthenticated = user.Identity?.IsAuthenticated == true;
+        bool hasValidToken = SetupService.HasValidToken;
+        
+        if (!isAuthenticated && !hasValidToken)
         {
-            // No valid token - redirect to signup
+            // Not authenticated and no valid token - redirect to signup
             Navigation.NavigateTo("/signup", forceLoad: true);
             return;
         }
