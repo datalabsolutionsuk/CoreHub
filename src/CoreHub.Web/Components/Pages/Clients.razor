@@ -8,24 +8,6 @@
 
 <PageTitle>Clients - CoreHub</PageTitle>
 
-@if (!isAuthenticated && !SetupService.IsSetupCompleted)
-{
-    <!-- Empty State for New Users Only -->
-    <div class="empty-state-container">
-        <div class="empty-state-content">
-            <div class="empty-state-icon">
-                <i class="fas fa-users"></i>
-            </div>
-            <h2>No Clients Yet</h2>
-            <p>Complete your setup first, then you can start adding clients to your practice.</p>
-            <button class="btn btn-primary btn-lg" @onclick="GoToSetup">
-                <i class="fas fa-rocket me-2"></i> Complete Setup
-            </button>
-        </div>
-    </div>
-}
-else
-{
 <div class="clients-container">
     <div class="clients-header">
         <div>
@@ -141,7 +123,6 @@ else
         </div>
     </div>
 </div>
-}
 
 <style>
     .empty-state-container {
@@ -284,13 +265,7 @@ else
 
     private async Task LoadClients()
     {
-        // Load dummy data for authenticated users OR if setup is completed
-        if (!isAuthenticated && !SetupService.IsSetupCompleted)
-        {
-            clients = new List<ClientDto>();
-            return;
-        }
-
+        // ALWAYS load dummy data - no authentication checks
         // Dummy data matching Dashboard (42 clients total)
         clients = new List<ClientDto>
         {

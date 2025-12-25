@@ -65,7 +65,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-users me-2"></i>All Users</h5>
-            <button class="btn btn-primary btn-sm">
+            <button class="btn btn-primary btn-sm" @onclick="ShowAddUserModal">
                 <i class="fas fa-plus me-1"></i> Add User
             </button>
         </div>
@@ -103,10 +103,10 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary me-1" title="Edit">
+                                    <button class="btn btn-sm btn-primary me-1" title="Edit" @onclick="() => EditUser(user)">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger" title="Delete">
+                                    <button class="btn btn-sm btn-danger" title="Delete" @onclick="() => DeleteUser(user)">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
@@ -122,7 +122,7 @@
     <div class="card mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>System Roles</h5>
-            <button class="btn btn-primary btn-sm">
+            <button class="btn btn-primary btn-sm" @onclick="ShowAddRoleModal">
                 <i class="fas fa-plus me-1"></i> Add Role
             </button>
         </div>
@@ -135,8 +135,8 @@
                             <h6>@role.Name</h6>
                             <p class="text-muted small">@role.UserCount users</p>
                             <div class="role-actions">
-                                <button class="btn btn-sm btn-outline-primary">Edit</button>
-                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditRole(role)">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteRole(role)">Delete</button>
                             </div>
                         </div>
                     </div>
@@ -145,6 +145,108 @@
         </div>
     </div>
 </div>
+
+<!-- Add/Edit User Modal -->
+@if (showUserModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingUser == null ? "Add New User" : "Edit User")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseUserModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" @bind="userEmail" placeholder="user@corehub.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" @bind="userUsername" placeholder="username" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Roles</label>
+                        <select class="form-select" @bind="userRole">
+                            <option value="">Select a role</option>
+                            @foreach (var role in roles)
+                            {
+                                <option value="@role.Name">@role.Name</option>
+                            }
+                        </select>
+                    </div>
+                    @if (editingUser == null)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" @bind="userPassword" placeholder="Password" />
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseUserModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveUser">
+                        <i class="fas fa-save me-1"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Add/Edit Role Modal -->
+@if (showRoleModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingRole == null ? "Add New Role" : "Edit Role")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseRoleModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Role Name</label>
+                        <input type="text" class="form-control" @bind="roleName" placeholder="Role Name" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseRoleModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveRole">
+                        <i class="fas fa-save me-1"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDeleteModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@deleteMessage</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteModal">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">
+                        <i class="fas fa-trash me-1"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <style>
     .admin-container {
@@ -243,6 +345,20 @@
         display: flex;
         gap: 10px;
     }
+
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+    }
+
+    .modal.show {
+        z-index: 1050;
+    }
 </style>
 
 @code {
@@ -253,6 +369,22 @@
 
     private List<UserDto> users = new();
     private List<RoleDto> roles = new();
+
+    // Modal states
+    private bool showUserModal = false;
+    private bool showRoleModal = false;
+    private bool showDeleteModal = false;
+    private UserDto? editingUser = null;
+    private RoleDto? editingRole = null;
+    private string deleteMessage = "";
+    private Action? deleteAction;
+
+    // Form fields
+    private string userEmail = "";
+    private string userUsername = "";
+    private string userRole = "";
+    private string userPassword = "";
+    private string roleName = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -291,6 +423,141 @@
         };
 
         await Task.CompletedTask;
+    }
+
+    // User Modal Methods
+    private void ShowAddUserModal()
+    {
+        editingUser = null;
+        userEmail = "";
+        userUsername = "";
+        userRole = "";
+        userPassword = "";
+        showUserModal = true;
+    }
+
+    private void EditUser(UserDto user)
+    {
+        editingUser = user;
+        userEmail = user.Email;
+        userUsername = user.UserName;
+        userRole = user.Roles.FirstOrDefault() ?? "";
+        userPassword = "";
+        showUserModal = true;
+    }
+
+    private void CloseUserModal()
+    {
+        showUserModal = false;
+        editingUser = null;
+    }
+
+    private async Task SaveUser()
+    {
+        if (editingUser == null)
+        {
+            // Add new user
+            var newUser = new UserDto
+            {
+                Email = userEmail,
+                UserName = userUsername,
+                Roles = new List<string> { userRole },
+                CreatedAt = DateTime.Now,
+                IsActive = true
+            };
+            users.Add(newUser);
+            totalUsers++;
+        }
+        else
+        {
+            // Update existing user
+            editingUser.Email = userEmail;
+            editingUser.UserName = userUsername;
+            editingUser.Roles = new List<string> { userRole };
+        }
+
+        CloseUserModal();
+        await Task.CompletedTask;
+    }
+
+    private void DeleteUser(UserDto user)
+    {
+        deleteMessage = $"Are you sure you want to delete user '{user.Email}'? This action cannot be undone.";
+        deleteAction = () =>
+        {
+            users.Remove(user);
+            totalUsers--;
+        };
+        showDeleteModal = true;
+    }
+
+    // Role Modal Methods
+    private void ShowAddRoleModal()
+    {
+        editingRole = null;
+        roleName = "";
+        showRoleModal = true;
+    }
+
+    private void EditRole(RoleDto role)
+    {
+        editingRole = role;
+        roleName = role.Name;
+        showRoleModal = true;
+    }
+
+    private void CloseRoleModal()
+    {
+        showRoleModal = false;
+        editingRole = null;
+    }
+
+    private async Task SaveRole()
+    {
+        if (editingRole == null)
+        {
+            // Add new role
+            var newRole = new RoleDto
+            {
+                Name = roleName,
+                UserCount = 0
+            };
+            roles.Add(newRole);
+            totalRoles++;
+        }
+        else
+        {
+            // Update existing role
+            editingRole.Name = roleName;
+        }
+
+        CloseRoleModal();
+        await Task.CompletedTask;
+    }
+
+    private void DeleteRole(RoleDto role)
+    {
+        deleteMessage = $"Are you sure you want to delete role '{role.Name}'? This will affect {role.UserCount} user(s).";
+        deleteAction = () =>
+        {
+            roles.Remove(role);
+            totalRoles--;
+        };
+        showDeleteModal = true;
+    }
+
+    // Delete Modal Methods
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        deleteMessage = "";
+        deleteAction = null;
+    }
+
+    private void ConfirmDelete()
+    {
+        deleteAction?.Invoke();
+        CloseDeleteModal();
     }
 
     public class UserDto
