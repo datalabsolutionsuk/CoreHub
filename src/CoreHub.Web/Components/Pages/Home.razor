@@ -15,7 +15,7 @@
             </div>
             <h2>Welcome to CoreHub!</h2>
             <p>Let's get started by completing your setup. Click below to configure your practice.</p>
-            <button class="btn btn-primary btn-lg" @onclick="() => Navigation.NavigateTo(\"/setup\")">
+            <button class="btn btn-primary btn-lg" @onclick="GoToSetup">
                 <i class="fas fa-rocket me-2"></i> Complete Setup
             </button>
         </div>
@@ -952,6 +952,11 @@ else
     {
         selectedFilter = "all";
         ResetPagination();
+    }
+
+    private void GoToSetup()
+    {
+        Navigation.NavigateTo("/setup");
     }
 
     private void ResetPagination()

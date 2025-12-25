@@ -16,7 +16,7 @@
             </div>
             <h2>No Clients Yet</h2>
             <p>Complete your setup first, then you can start adding clients to your practice.</p>
-            <button class="btn btn-primary btn-lg" @onclick="() => Navigation.NavigateTo(\"/setup\")">
+            <button class="btn btn-primary btn-lg" @onclick="GoToSetup">
                 <i class="fas fa-rocket me-2"></i> Complete Setup
             </button>
         </div>
@@ -332,6 +332,11 @@ else
     {
         // TODO: Open modal or navigate to add page
         Console.WriteLine("Add Client clicked");
+    }
+
+    private void GoToSetup()
+    {
+        Navigation.NavigateTo("/setup");
     }
 
     private void ViewClient(Guid id)
