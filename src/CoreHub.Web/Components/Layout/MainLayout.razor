@@ -1,5 +1,4 @@
 @inherits LayoutComponentBase
-@using Microsoft.AspNetCore.Components.Web
 
 <div class="page">
     <div class="sidebar">
@@ -11,11 +10,7 @@
             <div class="top-bar-content">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" 
-                           placeholder="Search clients, appointments..." 
-                           @bind="searchQuery"
-                           @bind:event="oninput"
-                           @onkeydown="HandleSearchKeyPress" />
+                    <input type="text" placeholder="Search clients, appointments..." />
                 </div>
                 <div class="top-bar-actions">
                     <button class="icon-button" title="Notifications">
@@ -193,20 +188,6 @@
         }
     }
 </style>
-
-@code {
-    private string searchQuery = "";
-
-    private void HandleSearchKeyPress(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(searchQuery))
-        {
-            // For now, just show in console - you can add navigation later
-            Console.WriteLine($"Searching for: {searchQuery}");
-            // TODO: Navigate to search results page or filter current view
-        }
-    }
-}
 
 @code {
 }

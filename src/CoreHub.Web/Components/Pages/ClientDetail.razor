@@ -1,0 +1,344 @@
+@page "/clients/{ClientId:guid}"
+@using Microsoft.AspNetCore.Components.Web
+@inject NavigationManager Navigation
+@rendermode @(new InteractiveServerRenderMode())
+
+<PageTitle>Client Details - CoreHub</PageTitle>
+
+<div class="client-detail-container">
+    <div class="client-detail-header">
+        <div>
+            <button class="btn btn-link p-0 mb-2" @onclick="GoBack">
+                <i class="fas fa-arrow-left"></i> Back to Clients
+            </button>
+            <h1 class="client-detail-title">@client.FullName</h1>
+            <p class="client-detail-subtitle">@client.ClientCode</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-primary me-2" @onclick="EditClient">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-primary" @onclick="ViewFlags">
+                <i class="fas fa-flag"></i> Flags (@client.ActiveFlags.Count)
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="text-muted small">Full Name</label>
+                            <p class="fw-bold">@client.FullName</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Client Code</label>
+                            <p class="fw-bold">@client.ClientCode</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Date of Birth</label>
+                            <p class="fw-bold">@client.DateOfBirth.ToShortDateString()</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="text-muted small">Status</label>
+                            <p>
+                                <span class="badge bg-@(client.Status == 1 ? "success" : "secondary")">
+                                    @GetStatusText(client.Status)
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Assigned Practitioner</label>
+                            <p class="fw-bold">@client.AssignedPractitionerName</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Data Quality Score</label>
+                            <p>
+                                <div class="dq-thermometer">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <span class="dq-segment @(i <= client.DataQualityScore ? "filled" : "")"></span>
+                                    }
+                                </div>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <small class="text-muted">2 days ago</small>
+                                <p class="mb-0">Last appointment completed</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <small class="text-muted">1 week ago</small>
+                                <p class="mb-0">Treatment plan updated</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <small class="text-muted">2 weeks ago</small>
+                                <p class="mb-0">Initial assessment completed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Total Sessions</span>
+                            <span class="h5 mb-0">24</span>
+                        </div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Active Flags</span>
+                            <span class="h5 mb-0 text-danger">@client.ActiveFlags.Count</span>
+                        </div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Next Appointment</span>
+                            <span class="small">Tomorrow 2:00 PM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (client.ActiveFlags.Any())
+            {
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">Active Flags</h5>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var flag in client.ActiveFlags)
+                        {
+                            <div class="alert alert-warning mb-2">
+                                <i class="fas fa-flag me-2"></i>@flag
+                            </div>
+                        }
+                        <button class="btn btn-sm btn-danger w-100" @onclick="ViewFlags">
+                            View All Flags
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .client-detail-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .client-detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+    .client-detail-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .client-detail-subtitle {
+        font-size: 1rem;
+        color: #475569;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .dq-thermometer {
+        display: flex;
+        gap: 2px;
+    }
+    
+    .dq-segment {
+        width: 12px;
+        height: 20px;
+        border: 1px solid #ddd;
+        background-color: #f8f9fa;
+    }
+    
+    .dq-segment.filled {
+        background-color: #28a745;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: -24px;
+        top: 12px;
+        bottom: -8px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+
+    .timeline-content {
+        padding-left: 10px;
+    }
+
+    .stat-item {
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+
+    @@media (max-width: 768px) {
+        .client-detail-container {
+            padding: 1rem;
+        }
+
+        .client-detail-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .client-detail-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Guid ClientId { get; set; }
+
+    private ClientDto client = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClient();
+    }
+
+    private async Task LoadClient()
+    {
+        // Get client from dummy data - match the ID with the clients list
+        client = GetClientById(ClientId);
+        await Task.CompletedTask;
+    }
+
+    private ClientDto GetClientById(Guid id)
+    {
+        // This matches dummy data from Clients.razor - in real app, query by actual ID
+        var allClients = new List<ClientDto>
+        {
+            new ClientDto { Id = id, ClientCode = "CL-001", FullName = "Sarah Johnson", DateOfBirth = new DateTime(1985, 3, 15), AssignedPractitionerName = "Dr. Smith", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string> { "Missed appointments" } },
+            new ClientDto { Id = id, ClientCode = "CL-002", FullName = "Michael Chen", DateOfBirth = new DateTime(1990, 7, 22), AssignedPractitionerName = "Dr. Johnson", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string> { "Payment overdue" } },
+        };
+
+        // Return first one for demo, or create a generic one
+        return allClients.FirstOrDefault() ?? new ClientDto
+        {
+            Id = id,
+            ClientCode = "CL-XXX",
+            FullName = "Sample Client",
+            DateOfBirth = DateTime.Now.AddYears(-30),
+            AssignedPractitionerName = "Dr. Smith",
+            Status = 1,
+            DataQualityScore = 4,
+            ActiveFlags = new List<string>()
+        };
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/clients");
+    }
+
+    private void EditClient()
+    {
+        Console.WriteLine($"Edit client: {client.FullName}");
+        // TODO: Show edit modal or navigate to edit page
+    }
+
+    private void ViewFlags()
+    {
+        Navigation.NavigateTo($"/clients/{ClientId}/flags");
+    }
+
+    private string GetStatusText(int status)
+    {
+        return status switch
+        {
+            1 => "Active",
+            2 => "Inactive",
+            3 => "Pending",
+            4 => "Closed",
+            _ => "Unknown"
+        };
+    }
+
+    public class ClientDto
+    {
+        public Guid Id { get; set; }
+        public string ClientCode { get; set; } = "";
+        public string FullName { get; set; } = "";
+        public DateTime DateOfBirth { get; set; }
+        public string? AssignedPractitionerName { get; set; }
+        public int Status { get; set; }
+        public int DataQualityScore { get; set; }
+        public List<string> ActiveFlags { get; set; } = new();
+    }
+}

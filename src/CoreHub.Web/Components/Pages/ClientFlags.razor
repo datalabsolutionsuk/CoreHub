@@ -1,0 +1,259 @@
+@page "/clients/{ClientId:guid}/flags"
+@using Microsoft.AspNetCore.Components.Web
+@inject NavigationManager Navigation
+@rendermode @(new InteractiveServerRenderMode())
+
+<PageTitle>Client Flags - CoreHub</PageTitle>
+
+<div class="flags-container">
+    <div class="flags-header">
+        <div>
+            <button class="btn btn-link p-0 mb-2" @onclick="GoBack">
+                <i class="fas fa-arrow-left"></i> Back to Clients
+            </button>
+            <h1 class="flags-title">Client Flags</h1>
+            <p class="flags-subtitle">@clientName - Active concerns and issues</p>
+        </div>
+        <button class="btn btn-primary" @onclick="AddFlag">
+            <i class="fas fa-plus me-1"></i> Add Flag
+        </button>
+    </div>
+
+    @if (flags.Any())
+    {
+        <div class="row">
+            @foreach (var flag in flags)
+            {
+                <div class="col-md-6 mb-3">
+                    <div class="card flag-card flag-@flag.Priority.ToLower()">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flag-priority">
+                                    <span class="badge bg-@flag.BadgeClass">@flag.Priority</span>
+                                </div>
+                                <small class="text-muted">@flag.CreatedDate</small>
+                            </div>
+                            <h5 class="card-title">@flag.Title</h5>
+                            <p class="card-text">@flag.Description</p>
+                            <div class="flag-actions">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditFlag(flag.Id)">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ResolveFlag(flag.Id)">
+                                    <i class="fas fa-check"></i> Resolve
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="empty-state-icon mb-3">
+                    <i class="fas fa-flag fa-3x text-muted"></i>
+                </div>
+                <h5 class="text-muted">No active flags</h5>
+                <p class="text-muted">This client has no current concerns or issues</p>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .flags-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .flags-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+    .flags-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .flags-subtitle {
+        font-size: 1rem;
+        color: #475569;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .flag-card {
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+    }
+
+    .flag-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .flag-card.flag-high {
+        border-left-color: #ef4444;
+    }
+
+    .flag-card.flag-medium {
+        border-left-color: #eab308;
+    }
+
+    .flag-card.flag-low {
+        border-left-color: #10b981;
+    }
+
+    .flag-priority {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .flag-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        border-radius: 50%;
+    }
+
+    @@media (max-width: 768px) {
+        .flags-container {
+            padding: 1rem;
+        }
+
+        .flags-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .flags-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Guid ClientId { get; set; }
+
+    private string clientName = "";
+    private List<FlagDto> flags = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFlags();
+    }
+
+    private async Task LoadFlags()
+    {
+        // Get client name from the dummy data
+        var client = GetClientById(ClientId);
+        clientName = client?.FullName ?? "Unknown Client";
+
+        // Load flags for this client
+        flags = new List<FlagDto>();
+        
+        if (client != null && client.ActiveFlags.Any())
+        {
+            // Create flag objects from the client's active flags
+            foreach (var flagText in client.ActiveFlags)
+            {
+                flags.Add(new FlagDto
+                {
+                    Id = Guid.NewGuid(),
+                    Title = flagText,
+                    Description = $"This issue requires attention for {client.FullName}",
+                    Priority = "High",
+                    BadgeClass = "danger",
+                    CreatedDate = "2 days ago"
+                });
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private ClientDto? GetClientById(Guid id)
+    {
+        // This matches the dummy data from Clients.razor
+        var allClients = new List<ClientDto>
+        {
+            new ClientDto { Id = id, ClientCode = "CL-001", FullName = "Sarah Johnson", ActiveFlags = new List<string> { "Missed last 2 appointments" } },
+            new ClientDto { Id = id, ClientCode = "CL-002", FullName = "Michael Chen", ActiveFlags = new List<string> { "Payment overdue" } }
+        };
+
+        // In a real app, you'd query the database by ID
+        // For now, return dummy data if this is one of the flagged clients
+        if (allClients.Any(c => c.ActiveFlags.Any()))
+        {
+            return allClients.First(c => c.ActiveFlags.Any());
+        }
+
+        return new ClientDto { Id = id, FullName = "Sample Client", ActiveFlags = new List<string>() };
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/clients");
+    }
+
+    private void AddFlag()
+    {
+        Console.WriteLine("Add flag clicked");
+        // TODO: Show add flag modal or form
+    }
+
+    private void EditFlag(Guid flagId)
+    {
+        Console.WriteLine($"Edit flag: {flagId}");
+        // TODO: Show edit flag modal
+    }
+
+    private void ResolveFlag(Guid flagId)
+    {
+        Console.WriteLine($"Resolve flag: {flagId}");
+        var flag = flags.FirstOrDefault(f => f.Id == flagId);
+        if (flag != null)
+        {
+            flags.Remove(flag);
+        }
+        // TODO: Update in database
+    }
+
+    public class FlagDto
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Priority { get; set; } = "Medium";
+        public string BadgeClass { get; set; } = "warning";
+        public string CreatedDate { get; set; } = "";
+    }
+
+    public class ClientDto
+    {
+        public Guid Id { get; set; }
+        public string ClientCode { get; set; } = "";
+        public string FullName { get; set; } = "";
+        public List<string> ActiveFlags { get; set; } = new();
+    }
+}

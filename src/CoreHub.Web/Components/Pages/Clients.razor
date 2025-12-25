@@ -1,12 +1,18 @@
 @page "/clients"
+@using Microsoft.AspNetCore.Components.Web
+@inject NavigationManager Navigation
+@rendermode @(new InteractiveServerRenderMode())
 
 <PageTitle>Clients - CoreHub</PageTitle>
 
-<div class="clients-page">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Clients</h1>
+<div class="clients-container">
+    <div class="clients-header">
+        <div>
+            <h1 class="clients-title">Clients</h1>
+            <p class="clients-subtitle">Manage your client records and information</p>
+        </div>
         <button class="btn btn-primary" @onclick="ShowAddClient">
-            <i class="fas fa-plus"></i> Add Client
+            <i class="fas fa-plus me-1"></i> Add Client
         </button>
     </div>
 
@@ -40,14 +46,16 @@
     </div>
 
     <div class="card">
-        <div class="card-body">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Client Code</th>
-                        <th>Name</th>
-                        <th>DOB</th>
-                        <th>Practitioner</th>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Client Code</th>
+                            <th>Name</th>
+                            <th>DOB</th>
+                            <th>Practitioner</th>
                         <th>Status</th>
                         <th>DQ Score</th>
                         <th>Flags</th>
@@ -57,16 +65,19 @@
                 <tbody>
                     @if (clients.Any())
                     {
-                        @foreach (var client in clients)
+                        @for (int index = 0; index < clients.Count; index++)
                         {
+                            var client = clients[index];
+                            var rowNumber = index + 1;
                             <tr>
+                                <td class="text-muted">@rowNumber</td>
                                 <td>@client.ClientCode</td>
                                 <td>@client.FullName</td>
                                 <td>@client.DateOfBirth.ToShortDateString()</td>
                                 <td>@client.AssignedPractitionerName</td>
                                 <td>
                                     <span class="badge bg-@(client.Status == 1 ? "success" : "secondary")">
-                                        @client.Status
+                                        @GetStatusText(client.Status)
                                     </span>
                                 </td>
                                 <td>
@@ -80,12 +91,18 @@
                                 <td>
                                     @if (client.ActiveFlags.Any())
                                     {
-                                        <span class="badge bg-danger">@client.ActiveFlags.Count</span>
+                                        <button class="btn btn-sm btn-danger" @onclick="() => ViewFlags(client.Id)">
+                                            <i class="fas fa-flag"></i> @client.ActiveFlags.Count
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
                                     }
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-primary" @onclick="() => ViewClient(client.Id)">
-                                        View
+                                        <i class="fas fa-eye"></i> View
                                     </button>
                                 </td>
                             </tr>
@@ -94,16 +111,55 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center text-muted">No clients found</td>
+                            <td colspan="9" class="text-center text-muted">No clients found</td>
                         </tr>
                     }
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
+    .clients-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .clients-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+    .clients-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .clients-subtitle {
+        font-size: 1rem;
+        color: #475569;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .clients-container .card {
+        border-radius: 12px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .clients-container .card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
     .dq-thermometer {
         display: flex;
         gap: 2px;
@@ -118,6 +174,21 @@
     
     .dq-segment.filled {
         background-color: #28a745;
+    }
+
+    @@media (max-width: 768px) {
+        .clients-container {
+            padding: 1rem;
+        }
+
+        .clients-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .clients-title {
+            font-size: 1.5rem;
+        }
     }
 </style>
 
@@ -134,8 +205,52 @@
 
     private async Task LoadClients()
     {
-        // TODO: Load from API
-        clients = new List<ClientDto>();
+        // Dummy data matching Dashboard (42 clients total)
+        clients = new List<ClientDto>
+        {
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-001", FullName = "Sarah Johnson", DateOfBirth = new DateTime(1985, 3, 15), AssignedPractitionerName = "Dr. Smith", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string> { "Missed appointments" } },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-002", FullName = "Michael Chen", DateOfBirth = new DateTime(1990, 7, 22), AssignedPractitionerName = "Dr. Johnson", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string> { "Payment overdue" } },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-003", FullName = "Emma Davis", DateOfBirth = new DateTime(1988, 11, 8), AssignedPractitionerName = "Dr. Williams", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-004", FullName = "James Wilson", DateOfBirth = new DateTime(1975, 5, 30), AssignedPractitionerName = "Dr. Brown", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-005", FullName = "Olivia Brown", DateOfBirth = new DateTime(1992, 2, 14), AssignedPractitionerName = "Dr. Smith", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-006", FullName = "William Garcia", DateOfBirth = new DateTime(1980, 9, 25), AssignedPractitionerName = "Dr. Jones", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-007", FullName = "Sophia Martinez", DateOfBirth = new DateTime(1995, 6, 18), AssignedPractitionerName = "Dr. Davis", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-008", FullName = "Alex Thompson", DateOfBirth = new DateTime(1987, 4, 12), AssignedPractitionerName = "Dr. Wilson", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-009", FullName = "Rachel Kim", DateOfBirth = new DateTime(1991, 8, 7), AssignedPractitionerName = "Dr. Taylor", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-010", FullName = "David Lee", DateOfBirth = new DateTime(1983, 12, 3), AssignedPractitionerName = "Dr. Anderson", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-011", FullName = "Jessica Taylor", DateOfBirth = new DateTime(1989, 1, 28), AssignedPractitionerName = "Dr. Thomas", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-012", FullName = "Robert Anderson", DateOfBirth = new DateTime(1978, 10, 16), AssignedPractitionerName = "Dr. Smith", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-013", FullName = "Maria Rodriguez", DateOfBirth = new DateTime(1993, 5, 9), AssignedPractitionerName = "Dr. Johnson", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-014", FullName = "Kevin White", DateOfBirth = new DateTime(1986, 7, 21), AssignedPractitionerName = "Dr. Williams", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-015", FullName = "Amanda Harris", DateOfBirth = new DateTime(1994, 3, 5), AssignedPractitionerName = "Dr. Brown", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-016", FullName = "Christopher Clark", DateOfBirth = new DateTime(1981, 11, 19), AssignedPractitionerName = "Dr. Davis", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-017", FullName = "Lisa Robinson", DateOfBirth = new DateTime(1990, 6, 14), AssignedPractitionerName = "Dr. Miller", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-018", FullName = "Daniel Lewis", DateOfBirth = new DateTime(1984, 2, 27), AssignedPractitionerName = "Dr. Wilson", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-019", FullName = "Emily Walker", DateOfBirth = new DateTime(1992, 9, 11), AssignedPractitionerName = "Dr. Moore", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-020", FullName = "Matthew Hall", DateOfBirth = new DateTime(1979, 4, 23), AssignedPractitionerName = "Dr. Taylor", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-021", FullName = "Ashley Allen", DateOfBirth = new DateTime(1988, 12, 6), AssignedPractitionerName = "Dr. Anderson", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-022", FullName = "Joshua Young", DateOfBirth = new DateTime(1991, 8, 17), AssignedPractitionerName = "Dr. Thomas", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-023", FullName = "Samantha King", DateOfBirth = new DateTime(1985, 5, 2), AssignedPractitionerName = "Dr. Jackson", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-024", FullName = "Andrew Scott", DateOfBirth = new DateTime(1987, 1, 14), AssignedPractitionerName = "Dr. White", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-025", FullName = "Elizabeth Green", DateOfBirth = new DateTime(1993, 10, 8), AssignedPractitionerName = "Dr. Harris", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-026", FullName = "Ryan Adams", DateOfBirth = new DateTime(1982, 7, 29), AssignedPractitionerName = "Dr. Martin", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-027", FullName = "Lauren Baker", DateOfBirth = new DateTime(1989, 3, 22), AssignedPractitionerName = "Dr. Thompson", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-028", FullName = "Brandon Nelson", DateOfBirth = new DateTime(1995, 11, 4), AssignedPractitionerName = "Dr. Garcia", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-029", FullName = "Megan Carter", DateOfBirth = new DateTime(1986, 6, 16), AssignedPractitionerName = "Dr. Martinez", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-030", FullName = "Justin Mitchell", DateOfBirth = new DateTime(1990, 2, 9), AssignedPractitionerName = "Dr. Robinson", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-031", FullName = "Nicole Perez", DateOfBirth = new DateTime(1984, 9, 1), AssignedPractitionerName = "Dr. Clark", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-032", FullName = "Tyler Roberts", DateOfBirth = new DateTime(1992, 5, 24), AssignedPractitionerName = "Dr. Lewis", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-033", FullName = "Brittany Turner", DateOfBirth = new DateTime(1988, 12, 13), AssignedPractitionerName = "Dr. Lee", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-034", FullName = "Eric Phillips", DateOfBirth = new DateTime(1981, 8, 7), AssignedPractitionerName = "Dr. Walker", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-035", FullName = "Melissa Campbell", DateOfBirth = new DateTime(1994, 4, 19), AssignedPractitionerName = "Dr. Hall", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-036", FullName = "Jacob Parker", DateOfBirth = new DateTime(1987, 11, 11), AssignedPractitionerName = "Dr. Allen", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-037", FullName = "Victoria Evans", DateOfBirth = new DateTime(1991, 7, 3), AssignedPractitionerName = "Dr. Young", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-038", FullName = "Nathan Edwards", DateOfBirth = new DateTime(1983, 3, 26), AssignedPractitionerName = "Dr. King", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-039", FullName = "Rebecca Collins", DateOfBirth = new DateTime(1989, 10, 18), AssignedPractitionerName = "Dr. Wright", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-040", FullName = "Aaron Stewart", DateOfBirth = new DateTime(1985, 6, 10), AssignedPractitionerName = "Dr. Lopez", Status = 1, DataQualityScore = 5, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-041", FullName = "Michelle Sanchez", DateOfBirth = new DateTime(1992, 1, 31), AssignedPractitionerName = "Dr. Hill", Status = 1, DataQualityScore = 4, ActiveFlags = new List<string>() },
+            new ClientDto { Id = Guid.NewGuid(), ClientCode = "CL-042", FullName = "Kyle Morris", DateOfBirth = new DateTime(1990, 9, 15), AssignedPractitionerName = "Dr. Scott", Status = 1, DataQualityScore = 3, ActiveFlags = new List<string>() }
+        };
         await Task.CompletedTask;
     }
 
@@ -147,11 +262,31 @@
     private void ShowAddClient()
     {
         // TODO: Open modal or navigate to add page
+        Console.WriteLine("Add Client clicked");
     }
 
     private void ViewClient(Guid id)
     {
-        // TODO: Navigate to client detail
+        // Navigate to client detail page
+        Navigation.NavigateTo($"/clients/{id}");
+    }
+
+    private void ViewFlags(Guid id)
+    {
+        // Navigate to flags page for this client
+        Navigation.NavigateTo($"/clients/{id}/flags");
+    }
+
+    private string GetStatusText(int status)
+    {
+        return status switch
+        {
+            1 => "Active",
+            2 => "Inactive",
+            3 => "Pending",
+            4 => "Closed",
+            _ => "Unknown"
+        };
     }
 
     public class ClientDto
