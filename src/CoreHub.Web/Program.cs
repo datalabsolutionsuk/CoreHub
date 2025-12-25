@@ -109,6 +109,9 @@ builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<ILetterService, LetterService>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 
+// Setup Service
+builder.Services.AddScoped<CoreHub.Web.Services.SetupService>();
+
 // Hangfire (skip in test environments)
 if (builder.Configuration.GetValue<bool>("Hangfire:Enabled", true))
 {
